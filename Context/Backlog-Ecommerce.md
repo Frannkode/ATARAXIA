@@ -1,7 +1,7 @@
 # Backlog — E-commerce Custom de Indumentaria
 
 **Stack definido (fijo para todo el proyecto — actualizado a 2026):**
-- Framework full-stack: Next.js 15 (App Router, Server Actions, React 19) + TypeScript — un único proyecto, sin backend Express separado
+- Framework full-stack: Next.js 16 (App Router, Server Actions, React 19) + TypeScript — un único proyecto, sin backend Express separado
 - Base de datos: PostgreSQL serverless en Neon (autoscaling + branching para entornos de preview)
 - ORM: Drizzle ORM (type-safe, ligero, compatible con edge runtime)
 - Pagos: MercadoPago SDK (Checkout Pro + Webhooks/IPN)
@@ -42,7 +42,7 @@
 **Historia:** Como equipo de desarrollo, quiero tener el proyecto configurado con linting, CI básico y entornos, para poder empezar a construir features sin fricción.
 **Rol:** Backend / DevOps
 **Tareas técnicas:**
-- Inicializar proyecto Next.js 15 (App Router) en TypeScript, con estructura de Route Handlers para la API interna
+- Inicializar proyecto Next.js 16 (App Router) en TypeScript, con estructura de Route Handlers para la API interna
 - Configurar Drizzle ORM con conexión a PostgreSQL serverless (Neon) y pooling de conexiones; migraciones iniciales con drizzle-kit
 - Configurar Tailwind CSS v4 + shadcn/ui con los tokens de color de marca (lila/negro/gris) definitivos desde el arranque, no placeholders
 - Configurar variables de entorno (.env.example) y documentar en README
