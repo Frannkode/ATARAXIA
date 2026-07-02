@@ -52,6 +52,7 @@ Esto es lo que necesito confirmado para no frenar el desarrollo a mitad de sprin
 - ¿Necesitan que el pedido genere algún tipo de comprobante simple para el cliente (no es factura electrónica, eso está fuera de alcance — hablo de un PDF o resumen básico del pedido)?
 - ¿Tienen ya cuenta de Google Analytics / Search Console, o hay que crearlas?
 - ¿Quieren notificar pedidos también por WhatsApp además de email? (Hoy está fuera de alcance, pero si es una prioridad real conviene saberlo ahora para cotizarlo aparte, no meterlo de apuro).
+- **Ya implementado con un valor por defecto, pero se puede cambiar:** el catálogo (Historia 1.3) quedó con paginación clásica (12 productos por página, botones Anterior/Siguiente) en vez de scroll infinito. Es la opción más simple y la que mejor rinde. Si prefieren scroll infinito, avisen y se ajusta — no es un cambio grande a esta altura.
 
 ---
 

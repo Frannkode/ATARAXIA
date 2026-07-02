@@ -89,5 +89,6 @@ Hola! 👋 Antes de arrancar con el desarrollo de la tienda te voy a ir pasando 
 - ¿Necesitan que le mandemos algún comprobante simple del pedido al cliente? (no es factura, es solo un resumen del pedido)
 - ¿Ya tenés Google Analytics armado o lo creamos de cero?
 - ¿Te interesa mandar las notificaciones también por WhatsApp además de mail? Hoy no está contemplado en el presupuesto, pero si te importa lo charlamos aparte.
+- Dato: el catálogo ya quedó armado con paginación clásica (12 productos por página, "Anterior/Siguiente") en vez de scroll infinito, porque es lo más simple y lo que mejor rinde. Si preferís scroll infinito avisame, se puede cambiar sin drama.
 
 Cualquier cosa que no tengas clara ahora, tranqui, avisame y seguimos con lo que sí está resuelto para no frenar 🙌
