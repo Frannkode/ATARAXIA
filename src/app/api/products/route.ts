@@ -1,16 +1,18 @@
-import { db } from "@/db";
+import { getProducts } from "@/db/queries/products";
 
-export async function GET() {
-  const products = await db.query.products.findMany({
-    where: (product, { eq }) => eq(product.active, true),
-    orderBy: (product, { desc }) => desc(product.createdAt),
-    with: {
-      category: true,
-      images: {
-        orderBy: (image, { asc }) => asc(image.position),
-      },
-    },
+function parsePositiveInt(value: string | null) {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+
+  const result = await getProducts({
+    page: parsePositiveInt(searchParams.get("page")),
+    limit: parsePositiveInt(searchParams.get("limit")),
   });
 
-  return Response.json({ products });
+  return Response.json(result);
 }
