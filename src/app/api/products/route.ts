@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const result = await getProducts({
     page: parsePositiveInt(searchParams.get("page")),
     limit: parsePositiveInt(searchParams.get("limit")),
+    categoryId: searchParams.get("categoryId") ?? undefined,
   });
 
   return Response.json(result);
