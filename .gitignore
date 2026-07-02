@@ -12,9 +12,6 @@
 .env
 .env*.local
 
-# drizzle
-/drizzle/*.sql
-
 # misc
 .DS_Store
 *.pem
