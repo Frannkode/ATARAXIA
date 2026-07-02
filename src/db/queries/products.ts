@@ -1,4 +1,5 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, ilike, or } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { isValidUuid } from "@/lib/uuid";
@@ -6,16 +7,25 @@ import { isValidUuid } from "@/lib/uuid";
 export const PRODUCTS_PER_PAGE = 12;
 const MAX_LIMIT = 48;
 
+const searchSchema = z.string().trim().min(1).max(100);
+
+function parseSearch(search: string | undefined) {
+  const result = searchSchema.safeParse(search);
+  return result.success ? result.data : undefined;
+}
+
 export interface GetProductsOptions {
   page?: number;
   limit?: number;
   categoryId?: string;
+  search?: string;
 }
 
 export async function getProducts({
   page = 1,
   limit = PRODUCTS_PER_PAGE,
   categoryId,
+  search,
 }: GetProductsOptions = {}) {
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
   const safeLimit =
@@ -26,17 +36,29 @@ export async function getProducts({
   // Un categoryId con formato invalido (URL manipulada a mano) se ignora en
   // vez de romper la query contra la columna uuid.
   const safeCategoryId = isValidUuid(categoryId) ? categoryId : undefined;
+  const safeSearch = parseSearch(search);
 
-  const countWhere = safeCategoryId
-    ? and(eq(products.active, true), eq(products.categoryId, safeCategoryId))
-    : eq(products.active, true);
+  const countWhere = and(
+    eq(products.active, true),
+    safeCategoryId ? eq(products.categoryId, safeCategoryId) : undefined,
+    safeSearch
+      ? or(ilike(products.name, `%${safeSearch}%`), ilike(products.description, `%${safeSearch}%`))
+      : undefined,
+  );
 
   const [rows, totalRows] = await Promise.all([
     db.query.products.findMany({
-      where: (product, { eq, and }) =>
-        safeCategoryId
-          ? and(eq(product.active, true), eq(product.categoryId, safeCategoryId))
-          : eq(product.active, true),
+      where: (product, { eq, and, or, ilike }) =>
+        and(
+          eq(product.active, true),
+          safeCategoryId ? eq(product.categoryId, safeCategoryId) : undefined,
+          safeSearch
+            ? or(
+                ilike(product.name, `%${safeSearch}%`),
+                ilike(product.description, `%${safeSearch}%`),
+              )
+            : undefined,
+        ),
       orderBy: (product, { desc }) => desc(product.createdAt),
       limit: safeLimit,
       offset,
@@ -61,6 +83,7 @@ export async function getProducts({
       totalPages: Math.max(1, Math.ceil(total / safeLimit)),
     },
     categoryId: safeCategoryId,
+    search: safeSearch,
   };
 }
 

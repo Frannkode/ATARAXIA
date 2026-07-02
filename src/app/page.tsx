@@ -1,27 +1,34 @@
 import { CategoryFilter } from "@/components/category-filter";
 import { PaginationControls } from "@/components/pagination-controls";
 import { ProductCard } from "@/components/product-card";
+import { SearchInput } from "@/components/search-input";
 import { getCategories } from "@/db/queries/categories";
 import { getProducts } from "@/db/queries/products";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; categoryId?: string }>;
+  searchParams: Promise<{ page?: string; categoryId?: string; search?: string }>;
 }) {
-  const { page: pageParam, categoryId } = await searchParams;
+  const { page: pageParam, categoryId, search } = await searchParams;
   const requestedPage = Number(pageParam) || 1;
 
-  const [categories, { products, pagination, categoryId: activeCategoryId }] = await Promise.all([
+  const [categories, result] = await Promise.all([
     getCategories(),
-    getProducts({ page: requestedPage, categoryId }),
+    getProducts({ page: requestedPage, categoryId, search }),
   ]);
+
+  const { products, pagination, categoryId: activeCategoryId, search: activeSearch } = result;
 
   let emptyMessage: string | null = null;
   if (pagination.total === 0) {
-    emptyMessage = activeCategoryId
-      ? "No hay productos en esta categoría todavía."
-      : "Todavía no hay productos cargados.";
+    if (activeSearch) {
+      emptyMessage = `No encontramos productos que coincidan con "${activeSearch}".`;
+    } else if (activeCategoryId) {
+      emptyMessage = "No hay productos en esta categoría todavía.";
+    } else {
+      emptyMessage = "Todavía no hay productos cargados.";
+    }
   } else if (products.length === 0) {
     emptyMessage = "No hay productos en esta página.";
   }
@@ -30,7 +37,15 @@ export default async function Home({
     <main className="mx-auto max-w-6xl px-6 py-10">
       <h1 className="mb-6 text-2xl font-semibold text-foreground">Catálogo</h1>
 
-      <CategoryFilter categories={categories} activeCategoryId={activeCategoryId} />
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <SearchInput initialValue={activeSearch} categoryId={activeCategoryId} />
+      </div>
+
+      <CategoryFilter
+        categories={categories}
+        activeCategoryId={activeCategoryId}
+        search={activeSearch}
+      />
 
       {emptyMessage ? (
         <p className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">
@@ -48,6 +63,7 @@ export default async function Home({
         page={pagination.page}
         totalPages={pagination.totalPages}
         categoryId={activeCategoryId}
+        search={activeSearch}
       />
     </main>
   );

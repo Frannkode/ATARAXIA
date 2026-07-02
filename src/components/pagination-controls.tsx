@@ -6,10 +6,12 @@ export function PaginationControls({
   page,
   totalPages,
   categoryId,
+  search,
 }: {
   page: number;
   totalPages: number;
   categoryId?: string;
+  search?: string;
 }) {
   if (totalPages <= 1) return null;
 
@@ -23,7 +25,7 @@ export function PaginationControls({
     >
       <Button variant="outline" disabled={!hasPrev} asChild={hasPrev}>
         {hasPrev ? (
-          <Link href={buildCatalogHref({ page: page - 1, categoryId })}>Anterior</Link>
+          <Link href={buildCatalogHref({ page: page - 1, categoryId, search })}>Anterior</Link>
         ) : (
           <span>Anterior</span>
         )}
@@ -33,7 +35,7 @@ export function PaginationControls({
       </span>
       <Button variant="outline" disabled={!hasNext} asChild={hasNext}>
         {hasNext ? (
-          <Link href={buildCatalogHref({ page: page + 1, categoryId })}>Siguiente</Link>
+          <Link href={buildCatalogHref({ page: page + 1, categoryId, search })}>Siguiente</Link>
         ) : (
           <span>Siguiente</span>
         )}

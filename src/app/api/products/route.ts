@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     page: parsePositiveInt(searchParams.get("page")),
     limit: parsePositiveInt(searchParams.get("limit")),
     categoryId: searchParams.get("categoryId") ?? undefined,
+    search: searchParams.get("search") ?? undefined,
   });
 
   return Response.json(result);

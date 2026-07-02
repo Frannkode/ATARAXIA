@@ -19,21 +19,23 @@ const chipClass = (active: boolean) =>
 export function CategoryFilter({
   categories,
   activeCategoryId,
+  search,
 }: {
   categories: Category[];
   activeCategoryId?: string;
+  search?: string;
 }) {
   if (categories.length === 0) return null;
 
   return (
     <nav aria-label="Filtrar por categoría" className="mb-6 flex flex-wrap gap-2">
-      <Link href={buildCatalogHref({})} className={chipClass(!activeCategoryId)}>
+      <Link href={buildCatalogHref({ search })} className={chipClass(!activeCategoryId)}>
         Todas
       </Link>
       {categories.map((category) => (
         <Link
           key={category.id}
-          href={buildCatalogHref({ categoryId: category.id })}
+          href={buildCatalogHref({ categoryId: category.id, search })}
           className={chipClass(activeCategoryId === category.id)}
         >
           {category.name}
