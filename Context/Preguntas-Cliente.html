@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Preguntas pendientes al cliente — E-commerce</title>
+<style>
+  :root{
+    --lila: #7c3aed;
+    --lila-dark: #5b21b6;
+    --lila-soft: #f3eeff;
+    --lila-line: #ddd0fb;
+    --black: #14121a;
+    --gray: #6b6577;
+    --gray-light: #efedf4;
+    --white: #ffffff;
+    --red: #b3261e;
+    --red-soft: #fdecea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--lila-soft) 0%, var(--white) 260px);
+    color: var(--black);
+    line-height:1.6;
+  }
+  .wrap{max-width:820px; margin:0 auto; padding:0 24px 80px;}
+  header.hero{
+    padding:48px 24px 32px;
+    text-align:center;
+    background: linear-gradient(135deg, var(--black) 0%, var(--lila-dark) 100%);
+    color:var(--white);
+    border-radius: 0 0 24px 24px;
+    margin-bottom: 32px;
+  }
+  header.hero h1{margin:0 0 8px; font-size:1.7rem; letter-spacing:-0.02em;}
+  header.hero p{margin:0 auto; max-width:600px; color:#e6ddff; font-size:0.92rem;}
+  header.hero a{color:#fff;}
+
+  .legend{
+    display:flex; gap:16px; justify-content:center; flex-wrap:wrap;
+    margin-bottom:30px; font-size:0.82rem; color:var(--gray);
+  }
+  .legend b{color:var(--red);}
+
+  section.block{
+    background:var(--white);
+    border:1px solid var(--gray-light);
+    border-radius:14px;
+    padding:26px 28px;
+    margin-bottom:22px;
+    box-shadow: 0 4px 14px rgba(90,40,180,0.05);
+  }
+  section.block h2{
+    margin:0 0 16px;
+    color:var(--lila-dark);
+    font-size:1.15rem;
+    border-bottom:2px solid var(--lila-line);
+    padding-bottom:8px;
+  }
+  ul.q{list-style:none; margin:0; padding:0;}
+  ul.q li{
+    padding:10px 0 10px 30px;
+    position:relative;
+    font-size:0.93rem;
+    border-bottom:1px dashed var(--gray-light);
+  }
+  ul.q li:last-child{border-bottom:none;}
+  ul.q li::before{
+    content:"☐";
+    position:absolute; left:0; top:10px;
+    color:var(--lila);
+    font-size:1rem;
+  }
+  ul.q li.blocking::before{content:"●"; color:var(--red);}
+  ul.q li.blocking{background:var(--red-soft); border-radius:8px; padding-left:34px; margin:2px 0;}
+  .tag{
+    display:inline-block;
+    font-size:0.68rem;
+    font-weight:700;
+    color:var(--red);
+    background:#fff;
+    border:1px solid var(--red);
+    border-radius:999px;
+    padding:1px 8px;
+    margin-right:6px;
+    vertical-align:middle;
+  }
+  .howto{
+    background:var(--lila-soft);
+    border-left:4px solid var(--lila);
+    border-radius:0 10px 10px 0;
+    padding:14px 18px;
+    font-size:0.88rem;
+  }
+  .howto b{color:var(--lila-dark);}
+  footer{text-align:center; color:var(--gray); font-size:0.78rem; margin-top:30px;}
+  footer a{color:var(--lila-dark);}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Preguntas pendientes al cliente</h1>
+  <p>Decisiones de negocio que necesito confirmadas antes de cada sprint, para no frenar el desarrollo del <a href="Backlog-Ecommerce.html">backlog del e-commerce</a> a mitad de camino.</p>
+</header>
+
+<div class="wrap">
+
+<div class="legend"><span><b>●</b> Bloqueante — frena el inicio del sprint</span><span>☐ Importante, pero no frena de entrada</span></div>
+
+<section class="block">
+  <h2>Antes de arrancar (Sprint 1)</h2>
+  <ul class="q">
+    <li class="blocking"><span class="tag">Bloqueante</span>Logo en formato vectorial (SVG o AI) + variantes en PNG.</li>
+    <li class="blocking"><span class="tag">Bloqueante</span>Paleta de marca: códigos HEX exactos de lila, negro y gris — se aplica desde el día 1, necesito los valores finales, no una referencia aproximada.</li>
+    <li class="blocking"><span class="tag">Bloqueante</span>Al menos 10 productos reales con mínimo 3 fotos cada uno y descripciones, para no lanzar el catálogo con datos de prueba.</li>
+    <li>Categorías iniciales: nombres y si hay jerarquía (ej. "Ropa &gt; Remeras &gt; Manga corta" o todo plano).</li>
+    <li>Campos de producto: ¿manejan talle, color u otro atributo como campo estructurado? Define si el modelo necesita variantes (talle x color con stock independiente) o si alcanza con talles como texto libre.</li>
+    <li>Acceso a un repositorio de GitHub (o autorización para crear uno).</li>
+    <li>Cuenta de Cloudinary (o autorización para crear una a su nombre).</li>
+    <li class="blocking"><span class="tag">Bloqueante</span>Acceso a una cuenta de MercadoPago del cliente, aunque sea en modo test — la necesito desde el Sprint 1 para el spike de validación, no recién en el Sprint 3.</li>
+  </ul>
+</section>
+
+<section class="block">
+  <h2>Antes del Sprint 2 (precios y checkout)</h2>
+  <ul class="q">
+    <li class="blocking"><span class="tag">Bloqueante</span>Regla de mayorista: ¿cuál es la cantidad mínima para precio mayorista? ¿Es la misma para todos los productos o varía por producto? ¿Se calcula por producto individual o por el total del pedido?</li>
+    <li>Datos de envío: ¿qué campos son obligatorios en el checkout? (dirección, localidad, código postal, teléfono, DNI/CUIT, piso/depto)</li>
+    <li>Retiro en el local: ¿es una opción de entrega? Si sí, dirección y horarios para mostrar en el checkout.</li>
+    <li>Costo de envío: ¿fijo, variable por zona, a coordinar por WhatsApp después de la compra, o gratis?</li>
+    <li>Moneda y precios: confirmar pesos argentinos (ARS) y si los precios incluyen IVA o se muestran discriminados.</li>
+    <li>Monto mínimo de compra, si existe.</li>
+  </ul>
+</section>
+
+<section class="block">
+  <h2>Antes del Sprint 3 (MercadoPago y notificaciones)</h2>
+  <ul class="q">
+    <li class="blocking"><span class="tag">Bloqueante</span>Cuenta de MercadoPago verificada con Access Token y Public Key (al menos de test).</li>
+    <li>Pago rechazado: ¿el cliente puede reintentar el pago sobre el mismo pedido, o tiene que volver a armar el carrito?</li>
+    <li>Textos de los emails transaccionales: borrador de "pago aprobado" y "pago rechazado" (tono, firma, contacto).</li>
+    <li>¿Redes sociales o WhatsApp de contacto para incluir en el email y en el footer?</li>
+  </ul>
+</section>
+
+<section class="block">
+  <h2>Antes del Sprint 4 (panel admin)</h2>
+  <ul class="q">
+    <li class="blocking"><span class="tag">Bloqueante</span>Lista de administradores iniciales (email de cada uno) y si hay más de un nivel de permiso.</li>
+    <li>¿El panel admin va en una ruta del mismo dominio (/admin) o en un subdominio (admin.tudominio.com)?</li>
+  </ul>
+</section>
+
+<section class="block">
+  <h2>Antes del Sprint 5 (pedidos, envíos, stock)</h2>
+  <ul class="q">
+    <li>Estados de envío que van a usar en el día a día (ej. "preparando", "despachado", "entregado" — ¿son estos u otros?).</li>
+    <li>Confirmar de nuevo: ¿el stock se maneja por producto simple o por variante (talle/color con cantidades independientes)? Afecta directamente el control de stock de este sprint.</li>
+  </ul>
+</section>
+
+<section class="block">
+  <h2>Antes del Sprint 6 (identidad final y lanzamiento)</h2>
+  <ul class="q">
+    <li class="blocking"><span class="tag">Bloqueante</span>Credenciales de producción de MercadoPago (Access Token real, no de test).</li>
+    <li class="blocking"><span class="tag">Bloqueante</span>Dominio propio ya comprado, con acceso a su configuración DNS (o alguien que pueda hacer los cambios cuando se lo pidamos).</li>
+    <li>¿Quieren una página de política de cambios/devoluciones como texto estático? No es funcionalidad, es solo contenido — pero si la quieren, necesito el texto.</li>
+  </ul>
+</section>
+
+<section class="block">
+  <h2>Preguntas generales (no bloquean un sprint puntual)</h2>
+  <ul class="q">
+    <li>¿Necesitan que el pedido genere algún comprobante simple para el cliente (no factura electrónica, eso está fuera de alcance)?</li>
+    <li>¿Tienen cuenta de Google Analytics / Search Console, o hay que crearlas?</li>
+    <li>¿Quieren notificar pedidos también por WhatsApp además de email? Hoy está fuera de alcance — si es prioridad real, conviene cotizarlo aparte ahora.</li>
+  </ul>
+</section>
+
+<div class="howto">
+  <b>Cómo usar esto:</b> a medida que tengan una respuesta, la tachan o la completan acá mismo y avisan para actualizar el backlog si algo cambia el alcance. Por ejemplo: si confirman que necesitan variantes de talle/color con stock independiente, eso agrega horas al Sprint 1 y al Sprint 5 que hoy no están contempladas.
+</div>
+
+<footer>Volver al <a href="Backlog-Ecommerce.html">backlog completo</a></footer>
+
+</div>
+</body>
+</html>

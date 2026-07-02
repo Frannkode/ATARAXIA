@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Backlog — E-commerce Custom de Indumentaria</title>
+<style>
+  :root{
+    --lila: #7c3aed;
+    --lila-dark: #5b21b6;
+    --lila-soft: #f3eeff;
+    --lila-line: #ddd0fb;
+    --black: #14121a;
+    --gray: #6b6577;
+    --gray-light: #efedf4;
+    --white: #ffffff;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--lila-soft) 0%, var(--white) 320px);
+    color: var(--black);
+    line-height:1.55;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 24px 80px;}
+
+  header.hero{
+    padding:56px 24px 40px;
+    text-align:center;
+    background: linear-gradient(135deg, var(--black) 0%, var(--lila-dark) 100%);
+    color:var(--white);
+    border-radius: 0 0 28px 28px;
+    margin-bottom: 36px;
+  }
+  header.hero h1{
+    margin:0 0 8px;
+    font-size:2rem;
+    letter-spacing:-0.02em;
+  }
+  header.hero p.sub{
+    margin:0 auto 20px;
+    max-width:640px;
+    color:#e6ddff;
+    font-size:0.98rem;
+  }
+  .badges{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
+  .badge{
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#fff;
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:0.78rem;
+    font-weight:500;
+  }
+  .meta-row{
+    display:flex; gap:24px; justify-content:center; margin-top:22px;
+    flex-wrap:wrap;
+  }
+  .meta-item{
+    background:rgba(255,255,255,0.08);
+    border-radius:10px;
+    padding:10px 18px;
+    font-size:0.85rem;
+  }
+  .meta-item b{display:block; font-size:1.05rem; color:#fff;}
+
+  nav.toc{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+    margin-bottom:48px;
+  }
+  nav.toc a{
+    text-decoration:none;
+    color:var(--lila-dark);
+    background:var(--white);
+    border:1.5px solid var(--lila-line);
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:0.82rem;
+    font-weight:600;
+    transition:all .15s ease;
+  }
+  nav.toc a:hover{ background:var(--lila); color:#fff; border-color:var(--lila);}
+
+  section.sprint{
+    background:var(--white);
+    border:1px solid var(--gray-light);
+    border-radius: var(--radius);
+    padding:32px;
+    margin-bottom:32px;
+    box-shadow: 0 4px 18px rgba(90,40,180,0.05);
+  }
+  section.sprint h2{
+    margin:0 0 6px;
+    color:var(--lila-dark);
+    font-size:1.4rem;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .sprint-num{
+    background:var(--lila);
+    color:#fff;
+    width:34px; height:34px;
+    border-radius:10px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:1rem;
+    flex-shrink:0;
+  }
+  .objetivo{color:var(--gray); font-size:0.95rem; margin:0 0 20px;}
+
+  .dor{
+    background:var(--lila-soft);
+    border-left:4px solid var(--lila);
+    border-radius:0 10px 10px 0;
+    padding:14px 18px;
+    margin-bottom:22px;
+    font-size:0.88rem;
+  }
+  .dor b{color:var(--lila-dark); display:block; margin-bottom:6px; font-size:0.82rem; text-transform:uppercase; letter-spacing:.04em;}
+  .dor ul{margin:0; padding-left:20px;}
+
+  details.story{
+    border:1px solid var(--gray-light);
+    border-radius:10px;
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  details.story summary{
+    cursor:pointer;
+    padding:13px 16px;
+    font-weight:600;
+    font-size:0.92rem;
+    background:var(--gray-light);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    list-style:none;
+  }
+  details.story summary::-webkit-details-marker{display:none;}
+  details.story summary::before{
+    content:"▸";
+    color:var(--lila);
+    transition:transform .15s ease;
+  }
+  details.story[open] summary::before{transform:rotate(90deg);}
+  details.story .story-body{padding:16px 18px 4px;}
+  .chip{
+    font-size:0.7rem;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:999px;
+    background:var(--lila);
+    color:#fff;
+    white-space:nowrap;
+  }
+  .chip.rol{background:var(--black);}
+  .story-body p{margin:0 0 10px; font-size:0.9rem;}
+  .story-body p b{color:var(--lila-dark);}
+  .story-body ul{margin:0 0 12px; padding-left:20px; font-size:0.88rem;}
+  .story-body .field-label{
+    font-size:0.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--gray);
+    margin:0 0 4px;
+  }
+  .est-row{
+    display:flex; gap:10px; margin-top:10px; padding-top:10px;
+    border-top:1px dashed var(--gray-light);
+  }
+  .est-badge{
+    background:var(--black); color:#fff; font-size:0.78rem; font-weight:700;
+    padding:4px 12px; border-radius:8px;
+  }
+  .est-badge.sp{background:var(--lila);}
+
+  .box{
+    border-radius:10px;
+    padding:14px 18px;
+    margin:14px 0;
+    font-size:0.88rem;
+  }
+  .box.testing{ background:#eef7f0; border-left:4px solid #2e9c5c;}
+  .box.testing b{color:#1c6b3e;}
+  .box.dod{ background:var(--gray-light); }
+  .box.dod b{color:var(--black);}
+  .box.dod ul{list-style:none; padding-left:0; margin:8px 0 0;}
+  .box.dod li::before{content:"☐  ";}
+  .box.recortable{ background:#fff5eb; border-left:4px solid #d97f1f;}
+  .box.recortable b{color:#a15a10;}
+  .box.demo{ background:var(--lila-soft); border-left:4px solid var(--lila);}
+  .box.demo b{color:var(--lila-dark);}
+
+  table{border-collapse:collapse; width:100%; margin:14px 0; font-size:0.85rem;}
+  th, td{border:1px solid var(--gray-light); padding:8px 10px; text-align:left; vertical-align:top;}
+  th{background:var(--black); color:#fff; font-size:0.78rem; text-transform:uppercase; letter-spacing:.03em;}
+  tr:nth-child(even) td{background:#faf9fc;}
+
+  .risk-title{
+    margin-top:22px;
+    color:#a12b2b;
+    font-size:1rem;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  .total-bar{
+    margin-top:24px;
+    background: linear-gradient(90deg, var(--black), var(--lila-dark));
+    color:#fff;
+    border-radius:10px;
+    padding:14px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:700;
+    font-size:0.95rem;
+  }
+
+  h3.section-title{
+    color:var(--lila-dark);
+    border-bottom:2px solid var(--lila-line);
+    padding-bottom:8px;
+    margin-top:0;
+  }
+  ul.plain{padding-left:22px;}
+  ul.plain li{margin-bottom:6px; font-size:0.92rem;}
+
+  .summary-table td:first-child, .summary-table th:first-child{text-align:center; width:60px;}
+  .summary-table tr:last-child td{
+    background:var(--lila-soft);
+    font-weight:700;
+    color:var(--lila-dark);
+  }
+
+  footer{
+    text-align:center;
+    color:var(--gray);
+    font-size:0.8rem;
+    margin-top:40px;
+  }
+
+  @media(max-width:640px){
+    header.hero{padding:40px 16px 32px;}
+    header.hero h1{font-size:1.5rem;}
+    section.sprint{padding:20px;}
+    .meta-row{gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Backlog — E-commerce Custom de Indumentaria</h1>
+  <p class="sub">Desarrollo 100% a medida. Catálogo, venta mayorista/minorista, checkout sin registro, pagos automatizados con MercadoPago y panel de administración privado.</p>
+  <div class="badges">
+    <span class="badge">Next.js 15 + React 19</span>
+    <span class="badge">Route Handlers / Server Actions</span>
+    <span class="badge">PostgreSQL (Neon) + Drizzle ORM</span>
+    <span class="badge">MercadoPago SDK</span>
+    <span class="badge">Resend + React Email</span>
+    <span class="badge">Cloudinary</span>
+    <span class="badge">Better Auth</span>
+    <span class="badge">Zustand + Zod</span>
+    <span class="badge">Tailwind v4 + shadcn/ui</span>
+    <span class="badge">Vitest + Playwright</span>
+    <span class="badge">Vercel</span>
+  </div>
+  <p style="max-width:680px; margin:14px auto 0; font-size:0.78rem; color:#c9b8ff;">Stack actualizado 2026 — se eliminó el backend Express separado (todo vive en Next.js), Prisma → Drizzle, JWT manual → Better Auth, Jest → Vitest + Playwright. Secuencia actualizada: paleta de marca movida al Sprint 1, spike de MercadoPago agregado temprano (mismo total: 144h / 115 SP). Ver <a href="Preguntas-Cliente.html" style="color:#fff; text-decoration:underline;">preguntas pendientes al cliente</a>.</p>
+  <div class="meta-row">
+    <div class="meta-item"><b>06/07/2026</b>Inicio</div>
+    <div class="meta-item"><b>144h</b>Total estimado</div>
+    <div class="meta-item"><b>115 SP</b>Story Points</div>
+    <div class="meta-item"><b>6</b>Sprints semanales</div>
+    <div class="meta-item"><b>14/08/2026</b>Entrega final</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <a href="#s1">Sprint 1</a>
+  <a href="#s2">Sprint 2</a>
+  <a href="#s3">Sprint 3</a>
+  <a href="#s4">Sprint 4</a>
+  <a href="#s5">Sprint 5</a>
+  <a href="#s6">Sprint 6</a>
+  <a href="#nfr">No funcionales</a>
+  <a href="#alcance">Fuera de alcance</a>
+  <a href="#entrega">Entrega</a>
+  <a href="#resumen">Resumen</a>
+</nav>
+
+<!-- SPRINT 1 -->
+<section class="sprint" id="s1">
+  <h2><span class="sprint-num">1</span>Setup del proyecto + Catálogo + Ficha de producto</h2>
+  <p class="objetivo">Dejar el proyecto corriendo en ambos entornos (dev/staging) con el modelo de datos base y un catálogo navegable (listado, filtro, buscador y ficha expandible).</p>
+
+  <div class="dor">
+    <b>Definición de Listo (DoR)</b>
+    <ul>
+      <li>Logo del cliente en formato vectorial (SVG/AI) y variantes en PNG</li>
+      <li>Paleta de colores exacta (HEX) de lila/negro/gris — se aplica desde este sprint, no al final</li>
+      <li>Al menos 10 productos de muestra con fotos reales (mín. 3 fotos por producto) y descripciones</li>
+      <li>Definición de categorías iniciales (nombres y jerarquía si aplica)</li>
+      <li>Acceso a repositorio Git (GitHub) creado</li>
+      <li>Cuenta de Cloudinary creada (o credenciales para crearla)</li>
+      <li>Definición de qué campos tiene un producto (talle, color, SKU, etc.)</li>
+      <li>Acceso a cuenta de MercadoPago del cliente (modo test) para el spike de la Historia 1.7</li>
+    </ul>
+  </div>
+
+  <details class="story" open>
+    <summary>1.1 — Setup del proyecto <span class="chip rol">Backend / DevOps</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como equipo de desarrollo, quiero tener el monorepo/proyecto configurado con linting, CI básico y entornos, para poder empezar a construir features sin fricción.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Inicializar proyecto Next.js 15 (App Router) en TypeScript, con estructura de Route Handlers para la API interna</li>
+        <li>Configurar Drizzle ORM con conexión a PostgreSQL serverless (Neon) y pooling de conexiones; migraciones iniciales con drizzle-kit</li>
+        <li>Configurar Tailwind CSS v4 + shadcn/ui con los tokens de color de marca (lila/negro/gris) definitivos desde el arranque, no placeholders</li>
+        <li>Configurar variables de entorno (.env.example) y documentar en README</li>
+        <li>Setup de Cloudinary SDK para subida de imágenes</li>
+      </ul>
+      <p><b>Dependencias:</b> Ninguna</p>
+      <p><b>Casos borde:</b> Falta de credenciales de DB al desplegar → el build de CI debe fallar explícitamente con mensaje claro, no silenciosamente</p>
+      <p><b>Criterio de aceptación:</b> El proyecto responde en <code>/api/health</code> y renderiza una página placeholder, corriendo contra la base de datos de staging en Neon.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>1.2 — Modelo de datos base <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como backend, quiero modelar Producto, Categoría e Imagen en Drizzle, para tener la base de datos que sustenta todo el catálogo.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Definir schema Drizzle: product (nombre, descripción, SKU, precioMinorista, precioMayorista, cantidadMinimaMayorista, stock, categoriaId, activo), category, productImage</li>
+        <li>Migración inicial con drizzle-kit + seed con los productos de muestra provistos por el cliente</li>
+        <li>Route Handler GET /api/products y GET /api/products/:id</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Setup del proyecto (Historia 1.1)</p>
+      <p><b>Casos borde:</b> Producto sin imágenes cargadas → debe mostrarse con imagen placeholder, no romper el listado</p>
+      <p><b>Criterio de aceptación:</b> La API devuelve productos seedeados con su categoría e imágenes asociadas.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">2 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>1.3 — Listado de productos con paginación <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como visitante, quiero ver el listado de productos paginado, para poder explorar el catálogo sin que la página se sobrecargue.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Route Handler GET /api/products?page=&limit= con paginación server-side (Drizzle limit/offset)</li>
+        <li>Grid de productos en Next.js (Server Components) con imagen, nombre y precio minorista</li>
+        <li>Componente de paginación (o scroll infinito, a definir con cliente)</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Modelo de datos base (Historia 1.2)</p>
+      <p><b>Casos borde:</b> Catálogo vacío (0 productos) → mostrar estado vacío con mensaje, no un grid roto</p>
+      <p><b>Criterio de aceptación:</b> El listado carga en páginas de 12 productos sin traer todo el catálogo de una vez.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>1.4 — Filtro por categoría <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como visitante, quiero filtrar productos por categoría, para encontrar más rápido lo que busco.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Endpoint acepta query param categoryId</li>
+        <li>Componente de sidebar/dropdown de categorías (fetch de GET /api/categories)</li>
+        <li>Sincronizar filtro seleccionado con la URL (query string) para permitir compartir el link</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Listado de productos (Historia 1.3)</p>
+      <p><b>Casos borde:</b> Categoría sin productos activos → mostrar "sin resultados en esta categoría"</p>
+      <p><b>Criterio de aceptación:</b> Al seleccionar una categoría, el listado se actualiza mostrando solo productos de esa categoría, reflejado en la URL.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>1.5 — Buscador de productos <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como visitante, quiero buscar productos por nombre, para encontrar un artículo específico sin navegar por categorías.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Endpoint con búsqueda ILIKE sobre nombre/descripción (o búsqueda full-text nativa de PostgreSQL si el volumen lo justifica)</li>
+        <li>Input de búsqueda con debounce (300-500ms) en frontend</li>
+        <li>Combinar búsqueda + filtro de categoría en la misma query</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Listado de productos (Historia 1.3)</p>
+      <p><b>Casos borde:</b> Búsqueda sin resultados → mensaje claro; búsqueda con caracteres especiales (SQL injection) → sanitizada por Drizzle (parametrizado) y validada con Zod</p>
+      <p><b>Criterio de aceptación:</b> Buscar un término devuelve solo productos cuyo nombre o descripción lo contienen, sin recargar la página.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>1.6 — Ficha de producto expandible <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como visitante, quiero ver una ficha de producto con galería de fotos e información detallada, para decidir mi compra con confianza.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Route Handler GET /api/products/:id con todas las imágenes asociadas</li>
+        <li>Componente de galería (miniatura + imagen principal ampliable, tipo lightbox)</li>
+        <li>Sección de información detallada (talles disponibles, composición, descripción larga)</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Modelo de datos base (Historia 1.2)</p>
+      <p><b>Casos borde:</b> Producto con una sola imagen → galería debe funcionar igual sin errores; producto inactivo/eliminado accedido por link directo → página 404 amigable</p>
+      <p><b>Criterio de aceptación:</b> Al entrar a un producto se ve la galería completa navegable y toda su información, incluso desde un link directo.</p>
+      <div class="est-row"><span class="est-badge">6h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>1.7 — Spike de validación de MercadoPago <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como equipo de desarrollo, quiero validar temprano el acceso a la cuenta de MercadoPago del cliente y la conectividad del webhook, para no descubrir bloqueos de cuenta o de red recién en el Sprint 3 (el de mayor riesgo del proyecto).</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Verificar acceso a credenciales de test (Access Token, Public Key) de la cuenta del cliente</li>
+        <li>Crear una preferencia de pago mínima de prueba contra la API de MercadoPago</li>
+        <li>Exponer un endpoint de webhook de prueba vía túnel local (o preview deploy de Vercel) y confirmar que MercadoPago logra alcanzarlo</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Setup del proyecto (Historia 1.1); requiere cuenta de MercadoPago en el DoR</p>
+      <p><b>Casos borde:</b> Cuenta del cliente sin verificar o sin permisos para generar credenciales de test → escalar con el cliente de inmediato, antes de que bloquee el Sprint 3</p>
+      <p><b>Criterio de aceptación:</b> Se genera y cobra una preferencia de prueba de punta a punta en sandbox, y el webhook de prueba recibe la notificación correspondiente.</p>
+      <div class="est-row"><span class="est-badge">2h</span><span class="est-badge sp">1 SP</span></div>
+    </div>
+  </details>
+
+  <div class="box testing">
+    <b>Testing del sprint</b>
+    Tests unitarios de Route Handlers de catálogo (listado, filtro, búsqueda, ficha) con Vitest, y test de render de componentes clave (grid, galería) con Vitest + Testing Library.<br>
+    <b>Criterio:</b> Suite en verde en CI cubriendo catálogo vacío y producto sin imágenes. — <b>4h / 2 SP</b>
+  </div>
+
+  <div class="box dod">
+    <b>Definición de Hecho del sprint</b>
+    <ul>
+      <li>Código mergeado sin romper CI</li>
+      <li>Catálogo, filtro, buscador y ficha funcionando en staging</li>
+      <li>Seed de productos reales cargado</li>
+      <li>Tests de catálogo en verde</li>
+      <li>Demo realizada al cliente</li>
+    </ul>
+  </div>
+
+  <div class="box recortable">
+    <b>Recortable si se atrasa</b>
+    No recortable: Modelo de datos, Listado de productos, Spike de MercadoPago (cuanto antes se detecte un bloqueo de cuenta, mejor). Recortable a Sprint 2: Buscador.
+  </div>
+
+  <div class="box demo">
+    <b>Demo al cliente</b>
+    Navegar el catálogo en staging, filtrar por categoría, buscar un producto y abrir la ficha viendo sus múltiples fotos.
+  </div>
+
+  <div class="total-bar"><span>Total Sprint 1</span><span>34h · 24 SP</span></div>
+</section>
+
+<!-- SPRINT 2 -->
+<section class="sprint" id="s2">
+  <h2><span class="sprint-num">2</span>Precios mayorista/minorista + Carrito + Checkout sin registro</h2>
+  <p class="objetivo">Permitir que un visitante arme un pedido con precios diferenciados según cantidad y complete un checkout sin necesidad de crear cuenta.</p>
+
+  <div class="dor">
+    <b>Definición de Listo (DoR)</b>
+    <ul>
+      <li>Reglas de negocio de mayorista: cantidad mínima para precio mayorista, si aplica por producto o por pedido total</li>
+      <li>Campos de envío requeridos definidos (dirección, localidad, CP, teléfono; retiro en local si aplica)</li>
+      <li>Definición de si el envío tiene costo fijo, variable o se coordina aparte</li>
+    </ul>
+  </div>
+
+  <details class="story" open>
+    <summary>2.1 — Modelo de precios mayorista/minorista <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como backend, quiero que cada producto tenga precio minorista y mayorista con una cantidad mínima de activación, para soportar ambos tipos de venta desde el mismo catálogo.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Extender schema de product: precioMayorista, cantidadMinimaMayorista</li>
+        <li>Lógica de cálculo de precio unitario según cantidad en el Route Handler (fuente de verdad, no confiar en el frontend)</li>
+        <li>Endpoint que recalcula precio total dado productId + cantidad</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Modelo de datos base — Sprint 1</p>
+      <p><b>Casos borde:</b> Producto sin precio mayorista → se usa minorista; cantidad exactamente igual al mínimo → aplica mayorista (regla ">=")</p>
+      <p><b>Criterio de aceptación:</b> Con cantidad ≥ mínimo mayorista, el backend devuelve el precio mayorista correcto.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>2.2 — Cálculo de precio dinámico en frontend <span class="chip rol">Frontend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como comprador, quiero ver cómo cambia el precio a medida que modifico la cantidad, para entender cuándo conviene comprar mayorista.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Selector de cantidad con indicador visual ("A partir de X unidades, precio mayorista")</li>
+        <li>Consumir el endpoint de cálculo de precio del backend</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Modelo de precios (Historia 2.1)</p>
+      <p><b>Casos borde:</b> Cantidad 0 o negativa → input bloqueado/validado</p>
+      <p><b>Criterio de aceptación:</b> El precio mostrado siempre coincide con el calculado por el backend al agregar al carrito.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>2.3 — Carrito de compras <span class="chip rol">Frontend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como comprador, quiero agregar, quitar y modificar cantidades de productos en un carrito, para armar mi pedido antes de pagar.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Store de carrito con Zustand persistido en localStorage (soporta guest)</li>
+        <li>Componente de carrito (drawer o página) con edición de cantidades y eliminación</li>
+        <li>Recalcular precio total (saltos mayorista/minorista) en cada cambio</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Cálculo de precio dinámico (Historia 2.2)</p>
+      <p><b>Casos borde:</b> Producto desactivado mientras el usuario navegaba → se marca y bloquea el checkout; stock insuficiente → aviso y ajuste sugerido</p>
+      <p><b>Criterio de aceptación:</b> El carrito persiste entre recargas y refleja el precio correcto ante cualquier cambio de cantidad.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>2.4 — Checkout sin registro <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como comprador, quiero completar mi compra dejando solo mis datos de contacto y envío, para no tener que crear una cuenta.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Formulario de checkout (nombre, email, teléfono, dirección) validado con Zod</li>
+        <li>Server Action / Route Handler POST /api/orders que crea el pedido en estado pendiente_pago con snapshot de productos y precios</li>
+        <li>Modelo order y orderItem en Drizzle</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Carrito (Historia 2.3)</p>
+      <p><b>Casos borde:</b> Campos inválidos → validación bloqueante; doble submit → deshabilitar botón tras el primer envío para evitar pedidos duplicados</p>
+      <p><b>Criterio de aceptación:</b> Un visitante sin cuenta puede generar un pedido en estado pendiente, listo para pasar a pago.</p>
+      <div class="est-row"><span class="est-badge">6h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <div class="box testing">
+    <b>Testing del sprint</b>
+    Tests de lógica de precios (tabla de casos: cantidad justo debajo/en/encima del mínimo mayorista) y test de integración carrito → checkout → creación de orden.<br>
+    <b>Criterio:</b> Suite verde cubriendo saltos de precio y snapshot correcto en la orden. — <b>4h / 2 SP</b>
+  </div>
+
+  <div class="box dod">
+    <b>Definición de Hecho del sprint</b>
+    <ul>
+      <li>Flujo carrito → checkout → orden funcionando en staging</li>
+      <li>Precios mayorista/minorista validados con casos límite</li>
+      <li>Tests de precios y checkout en verde</li>
+      <li>Demo realizada al cliente</li>
+    </ul>
+  </div>
+
+  <div class="box recortable">
+    <b>Recortable si se atrasa</b>
+    No recortable: Modelo de precios, Checkout sin registro. Recortable a Sprint 3: indicador visual de umbral mayorista.
+  </div>
+
+  <div class="box demo">
+    <b>Demo al cliente</b>
+    Agregar productos en distintas cantidades viendo el salto a precio mayorista, y completar un checkout de punta a punta sin loguearse.
+  </div>
+
+  <div class="total-bar"><span>Total Sprint 2</span><span>24h · 20 SP</span></div>
+</section>
+
+<!-- SPRINT 3 -->
+<section class="sprint" id="s3">
+  <h2><span class="sprint-num">3</span>Integración MercadoPago + Webhooks + Notificaciones automáticas</h2>
+  <p class="objetivo">Cobrar automáticamente vía MercadoPago y notificar al cliente el estado de su pedido sin intervención manual.</p>
+
+  <div class="dor">
+    <b>Definición de Listo (DoR)</b>
+    <ul>
+      <li>Cuenta de MercadoPago del cliente creada (modo test) con Access Token y Public Key</li>
+      <li>Definición de qué pasa si el pago es rechazado (¿se libera stock? ¿se avisa para reintentar?)</li>
+      <li>Cuenta de Resend / dominio verificado para envío de emails</li>
+      <li>Textos definidos de los emails transaccionales (confirmación, rechazo)</li>
+    </ul>
+  </div>
+
+  <details class="story" open>
+    <summary>3.1 — Integración Checkout Pro de MercadoPago <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como comprador, quiero ser redirigido a MercadoPago para pagar mi pedido, para completar la compra de forma segura.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Integrar SDK de MercadoPago, crear preferencia (items, external_reference = orderId, back_urls, notification_url)</li>
+        <li>Route Handler POST /api/orders/:id/checkout que genera la preferencia y devuelve el link de pago</li>
+        <li>Reserva de stock al generar la preferencia para evitar sobreventa</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Checkout sin registro — Sprint 2</p>
+      <p><b>Casos borde:</b> Usuario abandona el pago → orden queda pendiente_pago con expiración configurable; reintento de pago sobre la misma orden → reutilizar/regenerar preferencia sin duplicar la orden</p>
+      <p><b>Criterio de aceptación:</b> Al confirmar el checkout, el comprador es redirigido a MercadoPago con el monto e ítems correctos.</p>
+      <div class="est-row"><span class="est-badge">6h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>3.2 — Webhook de confirmación de pago (IPN) <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como sistema, quiero recibir la notificación de MercadoPago cuando un pago se aprueba, rechaza o queda pendiente, para actualizar el pedido automáticamente.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Route Handler POST /api/webhooks/mercadopago que consulta el pago real vía API (nunca confiar solo en el payload)</li>
+        <li>Idempotencia: registrar paymentId procesados</li>
+        <li>Actualizar estado de la orden según approved / rejected / pending / in_process</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Integración Checkout Pro (Historia 3.1)</p>
+      <p><b>Casos borde:</b> Webhook duplicado (reintentos de MP) → idempotencia por paymentId; webhook antes de que exista la orden → reintento/cola; external_reference inexistente → loggear y responder 200 igual</p>
+      <p><b>Criterio de aceptación:</b> Un pago aprobado actualiza la orden en menos de 10s, sin duplicar procesamiento ante reintentos.</p>
+      <div class="est-row"><span class="est-badge">6h</span><span class="est-badge sp">8 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>3.3 — Actualización automática de estado de pedido <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero que el estado del pedido refleje automáticamente el resultado del pago, para no verificar manualmente en MercadoPago.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Máquina de estados de order: pendiente_pago → pagado / rechazado / en_proceso</li>
+        <li>Liberar stock reservado si el pago es rechazado o expira</li>
+        <li>Descontar stock definitivamente cuando el pago se aprueba</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Webhook (Historia 3.2)</p>
+      <p><b>Casos borde:</b> Pago aprobado pero stock ya no disponible → marcar orden para revisión manual, no fallar silenciosamente</p>
+      <p><b>Criterio de aceptación:</b> Toda orden pagada queda en estado pagado con el stock descontado, sin intervención manual.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>3.4 — Notificación automática al cliente <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como comprador, quiero recibir un email cuando mi pago fue procesado, para saber si mi pedido está confirmado.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Integrar Resend + React Email para envío y diseño de emails transaccionales</li>
+        <li>Templates de email (componentes React): pago aprobado, pago rechazado</li>
+        <li>Disparar envío desde el flujo de actualización de estado (Historia 3.3)</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Actualización automática de estado (Historia 3.3)</p>
+      <p><b>Casos borde:</b> Falla el envío de email → no debe bloquear la actualización del pedido; reintento o log para reenvío manual</p>
+      <p><b>Criterio de aceptación:</b> Al aprobarse o rechazarse un pago, el comprador recibe un email en menos de 1 minuto.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <div class="box testing">
+    <b>Testing del sprint</b>
+    Simulación de pagos en sandbox de MercadoPago (aprobado, rechazado, pendiente) verificando orden, stock y email. Incluye test de webhook duplicado.<br>
+    <b>Criterio:</b> Los 3 escenarios funcionan correctamente y un webhook reenviado no duplica efectos. — <b>5h / 3 SP</b>
+  </div>
+
+  <h3 class="risk-title">⚠ Riesgos de este sprint</h3>
+  <table>
+    <tr><th>Riesgo</th><th>Impacto</th><th>Mitigación</th></tr>
+    <tr>
+      <td>Ambiente test vs producción de MercadoPago se comportan distinto</td>
+      <td>Un flujo que funciona en sandbox falla en producción</td>
+      <td>Probar explícitamente con credenciales de producción antes del cierre del Sprint 6</td>
+    </tr>
+    <tr>
+      <td>Reintentos de webhook por timeout</td>
+      <td>Procesamiento duplicado de un mismo pago</td>
+      <td>Responder 200 inmediato y procesar async/idempotente por paymentId</td>
+    </tr>
+    <tr>
+      <td>Notificación de pago que nunca llega</td>
+      <td>Orden queda "pendiente" eternamente</td>
+      <td>Job periódico que reconsulta pagos pendientes contra la API de MercadoPago</td>
+    </tr>
+    <tr>
+      <td>Confusión entre external_reference y payment_id</td>
+      <td>Actualizar la orden incorrecta</td>
+      <td>Siempre consultar el pago completo por payment_id antes de actuar</td>
+    </tr>
+    <tr>
+      <td>Discrepancia de monto (manipulación del front)</td>
+      <td>Pérdida económica</td>
+      <td>Recalcular el monto en backend a partir de los ítems de la orden</td>
+    </tr>
+    <tr>
+      <td>Cold start de funciones serverless demorando la respuesta al webhook</td>
+      <td>MercadoPago podría reintentar si la respuesta tarda demasiado</td>
+      <td>Mantener el Route Handler del webhook liviano (solo valida y encola), procesar el resto async</td>
+    </tr>
+  </table>
+
+  <div class="box dod">
+    <b>Definición de Hecho del sprint</b>
+    <ul>
+      <li>Pago probado en sandbox: aprobado, rechazado y pendiente</li>
+      <li>Webhook idempotente sin duplicar efectos</li>
+      <li>Emails de confirmación/rechazo llegando correctamente</li>
+      <li>Stock se descuenta/libera según resultado del pago</li>
+      <li>Demo realizada al cliente</li>
+    </ul>
+  </div>
+
+  <div class="box recortable">
+    <b>Recortable si se atrasa</b>
+    No recortable: Webhook + actualización de estado. Recortable a Sprint 4: email de "pago pendiente/en proceso".
+  </div>
+
+  <div class="box demo">
+    <b>Demo al cliente</b>
+    Completar una compra pagando con tarjeta de test de MercadoPago y mostrar el cambio de estado automático + email de confirmación.
+  </div>
+
+  <div class="total-bar"><span>Total Sprint 3</span><span>26h · 24 SP</span></div>
+</section>
+
+<!-- SPRINT 4 -->
+<section class="sprint" id="s4">
+  <h2><span class="sprint-num">4</span>Panel admin: login/roles + CRUD de productos</h2>
+  <p class="objetivo">Dar al personal autorizado un panel privado para gestionar el catálogo (precios, descripciones, categorías) sin tocar la base de datos directamente.</p>
+
+  <div class="dor">
+    <b>Definición de Listo (DoR)</b>
+    <ul>
+      <li>Lista de usuarios administradores iniciales y si hay distinción de roles</li>
+      <li>Definición de si el panel vive en ruta separada (ej. /admin), confirmado con el cliente</li>
+    </ul>
+  </div>
+
+  <details class="story" open>
+    <summary>4.1 — Login de administrador con roles <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero iniciar sesión con mi usuario y contraseña, para acceder al panel de gestión de forma segura.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Configurar Better Auth con proveedor de email + contraseña para el acceso admin</li>
+        <li>Definir tabla de usuarios admin y rol por usuario en Drizzle, integrada al esquema de Better Auth</li>
+        <li>Configurar expiración/rotación de sesión y flujo de logout</li>
+      </ul>
+      <p><b>Dependencias:</b> Ninguna</p>
+      <p><b>Casos borde:</b> Intentos fallidos repetidos → rate limiting mediante el plugin de Better Auth; sesión expirada → redirigir a login, no panel roto</p>
+      <p><b>Criterio de aceptación:</b> Un admin válido se loguea y su sesión persiste vía cookie segura; credenciales incorrectas son rechazadas con mensaje genérico.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>4.2 — Middleware de protección de rutas admin <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como sistema, quiero que ninguna ruta del panel ni de la API admin sea accesible sin una sesión válida, para proteger la información sensible del negocio.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Middleware de Next.js que valida la sesión de Better Auth en todas las rutas /admin y /api/admin/*</li>
+        <li>Redirección a login si no hay sesión válida</li>
+        <li>Verificación de rol para acciones sensibles vía el plugin de roles de Better Auth</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Login de administrador (Historia 4.1)</p>
+      <p><b>Casos borde:</b> Acceso directo por URL sin sesión → redirección a login, no error 500; rol insuficiente → 403 explícito</p>
+      <p><b>Criterio de aceptación:</b> Ninguna ruta ni Route Handler admin responde datos sin una sesión válida.</p>
+      <div class="est-row"><span class="est-badge">3h</span><span class="est-badge sp">2 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>4.3 — CRUD de productos en panel admin <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero editar precio, descripción, stock e imágenes de un producto, para mantener el catálogo actualizado sin depender de un desarrollador.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Endpoints POST/PUT/DELETE /api/admin/products</li>
+        <li>Formulario de edición con subida de imágenes a Cloudinary</li>
+        <li>Listado admin de productos con acceso rápido a edición</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Modelo de datos — Sprint 1; Protección de rutas (Historia 4.2)</p>
+      <p><b>Casos borde:</b> Eliminar producto con órdenes asociadas → soft delete, nunca borrado físico; falla de subida de imagen → error sin perder el resto del formulario</p>
+      <p><b>Criterio de aceptación:</b> Un cambio de precio o descripción en el panel se refleja inmediatamente en el catálogo público.</p>
+      <div class="est-row"><span class="est-badge">6h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>4.4 — CRUD de categorías <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero crear, editar y eliminar categorías, para reorganizar el catálogo cuando cambie la colección.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Endpoints POST/PUT/DELETE /api/admin/categories</li>
+        <li>UI de gestión de categorías en el panel</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: CRUD de productos (Historia 4.3)</p>
+      <p><b>Casos borde:</b> Eliminar categoría con productos asociados → bloquear o pedir reasignación primero</p>
+      <p><b>Criterio de aceptación:</b> Las categorías editadas desde el panel aparecen inmediatamente en el filtro del catálogo público.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <div class="box testing">
+    <b>Testing del sprint</b>
+    Tests de autenticación (login válido/inválido, expiración de sesión, acceso sin sesión) y de CRUD de productos/categorías incluyendo soft delete con órdenes asociadas, con Vitest.<br>
+    <b>Criterio:</b> Suite verde cubriendo accesos no autorizados y la regla de soft delete. — <b>4h / 2 SP</b>
+  </div>
+
+  <div class="box dod">
+    <b>Definición de Hecho del sprint</b>
+    <ul>
+      <li>Login admin con protección real de rutas</li>
+      <li>CRUD de productos y categorías operativo end-to-end</li>
+      <li>Ningún endpoint admin accesible sin sesión válida</li>
+      <li>Demo realizada al cliente</li>
+    </ul>
+  </div>
+
+  <div class="box recortable">
+    <b>Recortable si se atrasa</b>
+    No recortable: Login + protección de rutas, CRUD de productos. Recortable a Sprint 5: CRUD de categorías.
+  </div>
+
+  <div class="box demo">
+    <b>Demo al cliente</b>
+    Loguearse en el panel admin, editar precio y descripción de un producto en vivo, y verlo reflejado en la tienda pública.
+  </div>
+
+  <div class="total-bar"><span>Total Sprint 4</span><span>22h · 17 SP</span></div>
+</section>
+
+<!-- SPRINT 5 -->
+<section class="sprint" id="s5">
+  <h2><span class="sprint-num">5</span>Panel admin: gestión de pedidos, envíos y stock</h2>
+  <p class="objetivo">Que el personal pueda operar el día a día de pedidos (ver, actualizar envío, corregir estado) y mantener el stock bajo control.</p>
+
+  <div class="dor">
+    <b>Definición de Listo (DoR)</b>
+    <ul>
+      <li>Estados de envío definidos (ej. "preparando", "despachado", "entregado")</li>
+      <li>Definición de si el stock es por producto simple o por variante (talle/color)</li>
+    </ul>
+  </div>
+
+  <details class="story" open>
+    <summary>5.1 — Listado y detalle de pedidos <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero ver todos los pedidos con su estado y detalle, para gestionar la operación diaria de la tienda.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Route Handler GET /api/admin/orders con filtros por estado y fecha</li>
+        <li>Vista de detalle (productos, envío, estado de pago, estado de envío)</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Modelo de Order — Sprint 2; Protección de rutas — Sprint 4</p>
+      <p><b>Casos borde:</b> Pedido con pago rechazado en el listado → debe distinguirse visualmente de los pagados</p>
+      <p><b>Criterio de aceptación:</b> El administrador ve todos los pedidos y los filtra por estado sin acceder a la base de datos.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>5.2 — Actualización de estado de envío <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero marcar un pedido como "despachado" o "entregado", para que el estado de envío esté siempre actualizado.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Route Handler PATCH /api/admin/orders/:id/shipping-status</li>
+        <li>Selector de estado de envío en el detalle de pedido</li>
+        <li>(Opcional) campo de número de seguimiento manual</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Listado de pedidos (Historia 5.1)</p>
+      <p><b>Casos borde:</b> Marcar "entregado" sin estar pagado → bloquear o pedir confirmación explícita</p>
+      <p><b>Criterio de aceptación:</b> Cambiar el estado de envío se refleja inmediatamente en el detalle del pedido.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>5.3 — Actualización manual de estado de pedido <span class="chip rol">Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero poder corregir manualmente el estado de un pedido, para resolver casos excepcionales que el sistema automático no contempla.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Route Handler PATCH /api/admin/orders/:id/status con override manual</li>
+        <li>Registro de auditoría (quién cambió el estado y cuándo)</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Actualización automática de estado — Sprint 3</p>
+      <p><b>Casos borde:</b> Cambio manual que contradice el estado real del pago → permitir pero registrar en auditoría</p>
+      <p><b>Criterio de aceptación:</b> Un administrador puede forzar el cambio de estado y queda registro de quién lo hizo.</p>
+      <div class="est-row"><span class="est-badge">3h</span><span class="est-badge sp">2 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>5.4 — Control de stock <span class="chip rol">Frontend + Backend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como administrador, quiero ver y editar el stock disponible de cada producto, para evitar vender lo que no tengo.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Vista de stock en el panel con edición inline</li>
+        <li>Verificar consistencia con el descuento automático conectado desde Sprint 3</li>
+        <li>Alerta visual de stock bajo/agotado</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Actualización automática de stock — Sprint 3; CRUD de productos — Sprint 4</p>
+      <p><b>Casos borde:</b> Edición concurrente de dos admins → última escritura gana (limitación conocida); stock negativo por edición manual → validar mínimo 0</p>
+      <p><b>Criterio de aceptación:</b> El stock del panel coincide con el disponible real y un producto sin stock no puede comprarse.</p>
+      <div class="est-row"><span class="est-badge">6h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <div class="box testing">
+    <b>Testing del sprint</b>
+    Test de integración del flujo pedido pagado → cambio de estado de envío → verificación de consistencia de stock entre lo mostrado en el panel y la base de datos, con Vitest.<br>
+    <b>Criterio:</b> Flujo pedido→envío→stock sin inconsistencias. — <b>4h / 2 SP</b>
+  </div>
+
+  <div class="box dod">
+    <b>Definición de Hecho del sprint</b>
+    <ul>
+      <li>Panel de pedidos operativo con filtros por estado</li>
+      <li>Estado de envío y de pedido editables desde el panel</li>
+      <li>Stock visible, editable y consistente con las ventas automáticas</li>
+      <li>Demo realizada al cliente</li>
+    </ul>
+  </div>
+
+  <div class="box recortable">
+    <b>Recortable si se atrasa</b>
+    No recortable: Listado/detalle de pedidos, Control de stock. Recortable a Sprint 6: registro de auditoría de cambios manuales.
+  </div>
+
+  <div class="box demo">
+    <b>Demo al cliente</b>
+    Recorrer un pedido real desde que se pagó hasta marcarlo como despachado, mostrando la actualización automática de stock.
+  </div>
+
+  <div class="total-bar"><span>Total Sprint 5</span><span>22h · 17 SP</span></div>
+</section>
+
+<!-- SPRINT 6 -->
+<section class="sprint" id="s6">
+  <h2><span class="sprint-num">6</span>Ajuste final de marca + Testing general + Deploy</h2>
+  <p class="objetivo">Dejar la tienda validada de punta a punta y publicada en producción, con una auditoría final de que la identidad visual (aplicada desde el Sprint 1) quedó consistente en todas las pantallas.</p>
+
+  <div class="dor">
+    <b>Definición de Listo (DoR)</b>
+    <ul>
+      <li>Logo en formatos finales (SVG, favicon) — ya en uso desde el Sprint 1</li>
+      <li>Credenciales de producción de MercadoPago (Access Token real)</li>
+      <li>Dominio propio del cliente disponible con acceso a su configuración DNS</li>
+    </ul>
+  </div>
+
+  <details class="story" open>
+    <summary>6.1 — Ajuste final de identidad visual (QA de marca) <span class="chip rol">Frontend / Diseño</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como cliente, quiero una revisión final de que toda la tienda refleja mi identidad de marca de forma consistente, para asegurarme de que no quedó ningún resabio visual antes del lanzamiento.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Auditoría de las pantallas construidas en Sprints 1-5 (la paleta y el logo ya se aplicaron desde el Setup del Sprint 1, no se reconstruyen acá)</li>
+        <li>Revisión de contraste entre lila/negro/gris en textos y botones</li>
+        <li>Ajustes puntuales de algún componente que haya quedado con color placeholder</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Tokens de marca configurados en Setup (Historia 1.1) y todo el frontend construido en Sprints 1-5</p>
+      <p><b>Casos borde:</b> Contraste insuficiente en algún componente → ajustar tono manteniendo la paleta aprobada</p>
+      <p><b>Criterio de aceptación:</b> Todas las pantallas usan la paleta y el logo definitivos, sin colores placeholder remanentes.</p>
+      <div class="est-row"><span class="est-badge">3h</span><span class="est-badge sp">2 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>6.2 — Ajustes responsive y pulido de UI <span class="chip rol">Frontend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como visitante, quiero que la tienda se vea y funcione bien en mi celular, para poder comprar desde cualquier dispositivo.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Revisión responsive de catálogo, ficha, carrito y checkout en mobile/tablet/desktop</li>
+        <li>Ajustes de espaciados, tipografía y estados hover/focus con la paleta final</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Aplicación de paleta (Historia 6.1)</p>
+      <p><b>Casos borde:</b> Galería de imágenes en pantallas muy angostas → verificar que el lightbox no rompa el layout</p>
+      <p><b>Criterio de aceptación:</b> El flujo completo de compra es usable sin errores visuales en viewport mobile de 375px.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>6.3 — Testing end-to-end de todo el sistema <span class="chip rol">Backend / Frontend</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como equipo de desarrollo, quiero validar el sistema completo de punta a punta antes del deploy final, para asegurar que todas las piezas integradas funcionan juntas.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Suite E2E automatizada con Playwright cubriendo el flujo crítico: catálogo → ficha → carrito → checkout → pago → webhook → email → panel admin → stock</li>
+        <li>Prueba manual final de un pago real en producción con monto bajo</li>
+        <li>Revisión de logs de errores (Sentry) sin issues críticos abiertos</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Todos los sprints anteriores</p>
+      <p><b>Casos borde:</b> Discrepancia entre sandbox y producción real de MercadoPago → ajustar antes del cierre</p>
+      <p><b>Criterio de aceptación:</b> Se completa una compra real de bajo monto en producción sin errores, reflejada correctamente en el panel admin.</p>
+      <div class="est-row"><span class="est-badge">5h</span><span class="est-badge sp">5 SP</span></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>6.4 — Deploy a producción <span class="chip rol">Backend / DevOps</span></summary>
+    <div class="story-body">
+      <p><b>Historia:</b> Como cliente, quiero que mi tienda esté publicada en mi dominio propio, para poder empezar a vender.</p>
+      <p class="field-label">Tareas técnicas</p>
+      <ul>
+        <li>Deploy del proyecto Next.js completo (frontend + funciones serverless/edge) en Vercel apuntando al dominio del cliente</li>
+        <li>Provisioning de la base de datos de producción en Neon con pooling de conexiones serverless-friendly</li>
+        <li>Configuración de DNS y certificado SSL (gestionado por Vercel)</li>
+        <li>Configuración de credenciales de producción (MercadoPago, Resend, Cloudinary, Better Auth)</li>
+      </ul>
+      <p><b>Dependencias:</b> Depende de: Testing end-to-end (Historia 6.3)</p>
+      <p><b>Casos borde:</b> Propagación de DNS demorada → comunicar tiempos al cliente con anticipación</p>
+      <p><b>Criterio de aceptación:</b> La tienda es accesible públicamente en el dominio del cliente con HTTPS y procesando pagos reales.</p>
+      <div class="est-row"><span class="est-badge">4h</span><span class="est-badge sp">3 SP</span></div>
+    </div>
+  </details>
+
+  <div class="box dod">
+    <b>Definición de Hecho del sprint</b>
+    <ul>
+      <li>Paleta de colores y logo aplicados en toda la plataforma</li>
+      <li>Responsive validado en mobile/tablet/desktop</li>
+      <li>Compra real de prueba completada en producción sin errores</li>
+      <li>Tienda publicada en el dominio del cliente con SSL</li>
+      <li>Demo final al cliente realizada</li>
+    </ul>
+  </div>
+
+  <div class="box recortable">
+    <b>Recortable si se atrasa</b>
+    No recortable: Testing end-to-end, Deploy a producción. Recortable post-lanzamiento: pulido fino de responsive en breakpoints intermedios.
+  </div>
+
+  <div class="box demo">
+    <b>Demo al cliente</b>
+    Tienda completa funcionando en su propio dominio, con su marca aplicada, procesando una compra real de punta a punta.
+  </div>
+
+  <div class="total-bar"><span>Total Sprint 6</span><span>16h · 13 SP</span></div>
+</section>
+
+<!-- NFR -->
+<section class="sprint" id="nfr">
+  <h3 class="section-title">A) Requisitos no funcionales</h3>
+  <p><b>Seguridad</b></p>
+  <ul class="plain">
+    <li>Todas las rutas /api/admin/* protegidas por sesión de Better Auth + verificación de rol</li>
+    <li>Sesiones de administrador gestionadas por Better Auth (cookies httpOnly, rotación de sesión)</li>
+    <li>Validación y sanitización de todo input con Zod para prevenir inyección</li>
+    <li>Uso de Drizzle ORM (queries parametrizadas) para prevenir SQL injection</li>
+    <li>HTTPS obligatorio en producción (gestionado por Vercel)</li>
+    <li>Rate limiting en endpoints de login y checkout</li>
+    <li>Verificación de pagos siempre contra la API de MercadoPago, nunca por el payload crudo del webhook</li>
+  </ul>
+  <p><b>Rendimiento esperado</b></p>
+  <ul class="plain">
+    <li>Carga del catálogo por debajo de 2.5s en conexión 4G</li>
+    <li>Paginación server-side en todos los listados</li>
+    <li>Imágenes optimizadas vía Cloudinary (responsive, lazy loading)</li>
+    <li>Índices de base de datos en columnas de búsqueda/filtro frecuente</li>
+    <li>Rutas de catálogo candidatas a Edge Runtime de Vercel para reducir latencia</li>
+  </ul>
+  <p><b>Manejo de errores</b></p>
+  <ul class="plain">
+    <li>Logging centralizado, integrado a Sentry para alertas en producción</li>
+    <li>Páginas de error genéricas sin exponer detalles técnicos</li>
+    <li>Webhooks procesados de forma idempotente con reintento controlado</li>
+    <li>Job periódico de reconciliación de pagos pendientes</li>
+  </ul>
+</section>
+
+<!-- ALCANCE -->
+<section class="sprint" id="alcance">
+  <h3 class="section-title">B) Fuera de alcance</h3>
+  <ul class="plain">
+    <li>Aplicación mobile nativa (iOS/Android)</li>
+    <li>Soporte multi-idioma y multi-moneda</li>
+    <li>Facturación electrónica (AFIP u otro organismo fiscal)</li>
+    <li>Integración automática con transportistas para cotización o etiquetas de envío</li>
+    <li>Sistema de reviews/calificaciones de productos</li>
+    <li>Cupones de descuento, fidelización o promociones automáticas</li>
+    <li>Chat en vivo o soporte integrado</li>
+    <li>Multi-tienda o marketplace</li>
+    <li>Funcionalidad offline / PWA instalable</li>
+    <li>Analítica avanzada más allá de Google Analytics básico</li>
+    <li>Variantes complejas de producto (talle x color como stock independiente) si no se definió en el DoR</li>
+  </ul>
+</section>
+
+<!-- ENTREGA -->
+<section class="sprint" id="entrega">
+  <h3 class="section-title">C) Checklist de entrega al cliente</h3>
+  <p><b>Accesos que se entregan</b></p>
+  <div class="box dod">
+    <ul>
+      <li>Usuario y contraseña de acceso al panel de administración</li>
+      <li>Acceso al repositorio de código (GitHub)</li>
+      <li>Acceso al hosting (Vercel) y a la base de datos (Neon)</li>
+      <li>Acceso a Cloudinary (si se crea a nombre del cliente)</li>
+      <li>Acceso a Resend (email transaccional)</li>
+    </ul>
+  </div>
+  <p><b>Documentación entregada</b></p>
+  <div class="box dod">
+    <ul>
+      <li>README técnico del proyecto (entorno, variables de entorno)</li>
+      <li>Guía breve de uso del panel admin</li>
+      <li>Documento con las credenciales entregadas y dónde están alojadas</li>
+    </ul>
+  </div>
+  <p><b>Pendiente de configurar del lado del cliente</b></p>
+  <div class="box recortable">
+    <ul>
+      <li>Cuenta de MercadoPago propia verificada en modo producción</li>
+      <li>Dominio propio apuntado (DNS) al hosting del proyecto</li>
+      <li>Política de envíos y costos (gestión manual, no automatizada)</li>
+      <li>Alta impositiva/facturación si se incorpora a futuro (fuera de alcance)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- RESUMEN -->
+<section class="sprint" id="resumen">
+  <h3 class="section-title">D) Tabla resumen</h3>
+  <table class="summary-table">
+    <tr><th>Sprint</th><th>Objetivo</th><th>Horas</th><th>SP</th><th>Entrega estimada</th></tr>
+    <tr><td>1</td><td>Setup + Catálogo + Ficha de producto + spike MercadoPago</td><td>34h</td><td>24</td><td>10/07/2026</td></tr>
+    <tr><td>2</td><td>Precios mayorista/minorista + Carrito + Checkout</td><td>24h</td><td>20</td><td>17/07/2026</td></tr>
+    <tr><td>3</td><td>MercadoPago + Webhooks + Notificaciones</td><td>26h</td><td>24</td><td>24/07/2026</td></tr>
+    <tr><td>4</td><td>Panel admin: login/roles + CRUD productos</td><td>22h</td><td>17</td><td>31/07/2026</td></tr>
+    <tr><td>5</td><td>Panel admin: pedidos, envíos y stock</td><td>22h</td><td>17</td><td>07/08/2026</td></tr>
+    <tr><td>6</td><td>Ajuste final de marca + Testing general + Deploy</td><td>16h</td><td>13</td><td>14/08/2026</td></tr>
+    <tr><td colspan="2">Total</td><td>144h</td><td>115</td><td>14/08/2026</td></tr>
+  </table>
+</section>
+
+<footer>Backlog generado para el proyecto de e-commerce custom · Inicio 06/07/2026</footer>
+
+</div>
+</body>
+</html>

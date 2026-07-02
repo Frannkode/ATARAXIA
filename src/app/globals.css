@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Paleta de marca — PLACEHOLDER hasta que el cliente confirme los HEX
+ * exactos (ver Context/Preguntas-Cliente.md, sección Sprint 1).
+ * Cambiar únicamente estos tres valores actualiza toda la app.
+ */
+@theme {
+  --color-brand-lila: #7c3aed;
+  --color-brand-lila-dark: #5b21b6;
+  --color-brand-black: #14121a;
+  --color-brand-gray: #6b6577;
+  --color-brand-gray-light: #efedf4;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --background: #ffffff;
+  --foreground: var(--color-brand-black);
+
+  --card: #ffffff;
+  --card-foreground: var(--color-brand-black);
+  --popover: #ffffff;
+  --popover-foreground: var(--color-brand-black);
+
+  --primary: var(--color-brand-lila);
+  --primary-foreground: #ffffff;
+
+  --secondary: var(--color-brand-gray-light);
+  --secondary-foreground: var(--color-brand-black);
+
+  --muted: var(--color-brand-gray-light);
+  --muted-foreground: var(--color-brand-gray);
+
+  --accent: #f3eeff;
+  --accent-foreground: var(--color-brand-lila-dark);
+
+  --destructive: #d4183d;
+  --border: var(--color-brand-gray-light);
+  --input: var(--color-brand-gray-light);
+  --ring: var(--color-brand-lila);
+}
+
+.dark {
+  --background: var(--color-brand-black);
+  --foreground: #ffffff;
+
+  --card: #1c1926;
+  --card-foreground: #ffffff;
+  --popover: #1c1926;
+  --popover-foreground: #ffffff;
+
+  --primary: var(--color-brand-lila);
+  --primary-foreground: #ffffff;
+
+  --secondary: #201d29;
+  --secondary-foreground: #ffffff;
+
+  --muted: #201d29;
+  --muted-foreground: #a9a3b8;
+
+  --accent: #2a2140;
+  --accent-foreground: #e6ddff;
+
+  --destructive: #ff6467;
+  --border: #2a2635;
+  --input: #2a2635;
+  --ring: var(--color-brand-lila);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
