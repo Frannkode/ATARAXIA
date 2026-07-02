@@ -7,8 +7,11 @@
 import { db } from "./index";
 import { categories, productImages, products } from "./schema";
 
+// .png explícito: placehold.co devuelve SVG por default, y el optimizador
+// de imágenes de Next.js lo bloquea (correctamente, es una medida de
+// seguridad). Con .png esto no es un problema.
 const PLACEHOLDER_IMAGE = (seed: string, index: number) =>
-  `https://placehold.co/800x1000?text=${encodeURIComponent(seed)}+${index}`;
+  `https://placehold.co/800x1000.png?text=${encodeURIComponent(seed)}+${index}`;
 
 async function seed() {
   console.log("Borrando datos existentes...");

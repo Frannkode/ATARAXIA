@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ProductWithRelations } from "@/db/queries/products";
 import { formatPrice } from "@/lib/format";
 
-const PLACEHOLDER_IMAGE = "https://placehold.co/600x750?text=Sin+imagen";
+const PLACEHOLDER_IMAGE = "https://placehold.co/600x750.png?text=Sin+imagen";
 
 export function ProductCard({ product }: { product: ProductWithRelations }) {
   const coverImage = product.images[0]?.url ?? PLACEHOLDER_IMAGE;
