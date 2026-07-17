@@ -11,6 +11,7 @@ import type { CartItem } from "@/lib/cart-store";
 import { validateCartItems } from "@/lib/cart-validation";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/checkout-schema";
 import { getClientIp } from "@/lib/client-ip";
+import { getPostgresErrorCode } from "@/lib/db-errors";
 import { calculateLineItem } from "@/lib/pricing";
 
 export interface CreateOrderResult {
@@ -117,18 +118,9 @@ export async function createOrder(
     // contra stock_non_negative, o sea, no había stock suficiente. Cualquier
     // otro error es un problema real (red, bug, etc.) y no debe disfrazarse
     // de "sin stock" — eso escondería bugs en vez de mostrarlos.
-    //
-    // Drizzle envuelve el error real del driver en un DrizzleQueryError; el
-    // código de Postgres vive en error.cause.code, no en error.code
-    // (verificado contra Postgres real, ver orders.integration.test.ts).
-    const cause = error instanceof Error ? error.cause : undefined;
-    const isStockViolation =
-      typeof cause === "object" &&
-      cause !== null &&
-      "code" in cause &&
-      (cause as { code?: string }).code === "23514";
+    const errorCode = getPostgresErrorCode(error);
 
-    if (isStockViolation) {
+    if (errorCode === "23514") {
       return {
         success: false,
         error:
@@ -144,13 +136,7 @@ export async function createOrder(
     // realidad SÍ generó su pedido (por la otra request concurrente), se
     // busca y devuelve esa orden — el propósito de tener la key es justo que
     // esto sea indistinguible de "ya existía" para quien la usa.
-    const isIdempotencyConflict =
-      typeof cause === "object" &&
-      cause !== null &&
-      "code" in cause &&
-      (cause as { code?: string }).code === "23505";
-
-    if (isIdempotencyConflict) {
+    if (errorCode === "23505") {
       const raceWinner = await getOrderByIdempotencyKey(parsed.data.idempotencyKey);
       if (raceWinner) {
         return { success: true, orderId: raceWinner.id };

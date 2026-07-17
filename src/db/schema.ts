@@ -93,6 +93,11 @@ export const orders = pgTable("orders", {
   // duplicada (ver Historia 2.4 y la revision de arquitectura del Sprint 2).
   idempotencyKey: text("idempotency_key").notNull().unique(),
   status: orderStatusEnum("status").notNull().default("pendiente_pago"),
+  // Preferencia de pago de MercadoPago (Sprint 3, Historia 3.1). Nullable: no
+  // existe hasta el primer POST a /checkout. Un reintento de pago sobre la
+  // misma orden reutiliza esta preferencia en vez de crear una nueva en la
+  // cuenta de MercadoPago (se regenera solo si MercadoPago la reporta vencida).
+  mercadopagoPreferenceId: text("mercadopago_preference_id"),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
@@ -138,6 +143,20 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     references: [products.id],
   }),
 }));
+
+// Idempotencia del webhook de MercadoPago (Historia 3.2): una fila por
+// paymentId procesado. Tabla en vez de una columna en `orders` porque una
+// orden puede tener mas de un intento de pago (rechazado y reintentado) y
+// una sola columna perderia el historial de intentos previos.
+export const processedMercadopagoPayments = pgTable("processed_mercadopago_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  paymentId: text("payment_id").notNull().unique(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  status: text("status").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // Rate limit de createOrder (Historia 2.4, hallazgo de /review): checkout de
 // invitado sin gate de pago hasta Sprint 3 + descuento de stock inmediato es

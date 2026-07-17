@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "mercadopago_preference_id" text;

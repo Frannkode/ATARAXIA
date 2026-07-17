@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { resolveCart, type ResolvedCart } from "@/actions/cart";
+import { createPaymentPreference } from "@/actions/mercadopago";
 import { createOrder } from "@/actions/orders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,12 +61,22 @@ export default function CheckoutPage() {
     setFieldErrors({});
     startTransition(async () => {
       const result = await createOrder(parsed.data, items);
-      if (result.success && result.orderId) {
-        clearCart();
-        router.push(`/pedidos/${result.orderId}`);
+      if (!result.success || !result.orderId) {
+        setSubmitError(result.error ?? "No pudimos generar tu pedido. Probá de nuevo.");
         return;
       }
-      setSubmitError(result.error ?? "No pudimos generar tu pedido. Probá de nuevo.");
+
+      clearCart();
+
+      // El pedido ya existe (stock reservado) aunque falle la generación del
+      // link de pago — se manda igual a /pedidos/[id], que tiene su propio
+      // botón "Pagar ahora" para reintentar sin perder el pedido.
+      const preference = await createPaymentPreference(result.orderId);
+      if (preference.success && preference.initPoint) {
+        window.location.href = preference.initPoint;
+        return;
+      }
+      router.push(`/pedidos/${result.orderId}`);
     });
   }
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PayNowButton } from "@/components/pay-now-button";
 import { getOrderById } from "@/db/queries/orders";
 import { formatPrice } from "@/lib/format";
 
@@ -33,10 +34,11 @@ export default async function OrderConfirmationPage({
         Estado: {STATUS_LABEL[order.status] ?? order.status}
       </p>
 
-      <p className="mb-1 text-sm text-muted-foreground">
-        Todavía no procesamos el pago — en breve vas a poder pagar online (esta parte se conecta en
-        el próximo sprint).
-      </p>
+      {order.status === "pendiente_pago" && (
+        <div className="mb-6">
+          <PayNowButton orderId={order.id} />
+        </div>
+      )}
 
       <ul className="mt-6 flex flex-col gap-3 border-t border-border pt-4">
         {order.items.map((item) => (

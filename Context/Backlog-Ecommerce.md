@@ -20,7 +20,7 @@
 > Nota de actualización (secuencia): se movió la aplicación de la paleta de marca del Sprint 6 al Sprint 1 (configurarla desde el arranque es casi gratis; retocarla al final sobre todo el frontend ya construido es caro), y se agregó un spike corto de MercadoPago en el Sprint 1 para descubrir bloqueos de cuenta o de conectividad del webhook antes de llegar al Sprint 3, que es el de mayor riesgo. El total del proyecto se mantiene en 144h / 115 SP; solo se redistribuyeron 2h/1 SP entre el Sprint 1 y el Sprint 6. Ver [Preguntas-Cliente.md](Preguntas-Cliente.md) para las decisiones de negocio pendientes de confirmar.
 
 **Fecha de inicio:** lunes 6 de julio de 2026
-**Duración:** 6 sprints semanales (lunes a viernes) — ~144h totales
+**Duración:** 6 sprints semanales (lunes a viernes) — ~160h totales (ver tabla resumen al final del documento para el detalle actualizado por sprint)
 
 ---
 
@@ -251,38 +251,45 @@
 **Historia:** Como comprador, quiero ser redirigido a MercadoPago para pagar mi pedido, para completar la compra de forma segura.
 **Rol:** Backend
 **Tareas técnicas:**
-- Integrar SDK de MercadoPago, crear preferencia de pago (`items`, `external_reference` = orderId, `back_urls`, `notification_url`)
-- Route Handler `POST /api/orders/:id/checkout` que genera la preferencia y devuelve el link de pago
-- Reserva de stock al generar la preferencia (o al crear la orden, a definir) para evitar sobreventa
+- Integrar SDK oficial de MercadoPago (`mercadopago` npm), crear preferencia de pago (`items`, `external_reference` = orderId, `back_urls`, `notification_url`)
+- Columna nueva `mercadopagoPreferenceId` (nullable) en `orders`. Un reintento de pago sobre una orden `pendiente_pago` reutiliza la preferencia guardada en vez de crear una nueva en la cuenta de MercadoPago; si la preferencia guardada ya expiró (ver caso borde), se genera una nueva y se reemplaza.
+- `excluded_payment_types` en la preferencia para deshabilitar métodos offline (ticket/efectivo/transferencia — Rapipago, Pago Fácil, etc.): solo tarjeta y dinero en cuenta de MercadoPago, que confirman en minutos. Necesario para que la expiración por abandono (Historia 3.3) sea una asunción válida — un pago en efectivo puede tardar 1-3 días en acreditarse y la reserva de stock no puede esperar eso.
+- Route Handler `POST /api/orders/:id/checkout` que genera (o reutiliza) la preferencia y devuelve el link de pago
+- La página de confirmación (`/pedidos/[id]`) **nunca** debe leer el resultado del pago desde los query params del `back_url` de retorno — siempre lee el estado real desde la DB (ya es así por construcción desde Sprint 2, pero es una restricción explícita a no romper en la implementación: el back_url es alcanzable por el usuario y llega antes que el webhook).
 **Dependencias:** Depende de: Checkout sin registro — Sprint 2
-**Casos borde:** Usuario abandona el pago en MercadoPago (no vuelve) → la orden queda `pendiente_pago` con expiración configurable; usuario vuelve y reintenta pago sobre la misma orden → reutilizar preferencia o generar una nueva sin duplicar la orden
-**Criterio de aceptación:** Al confirmar el checkout, el comprador es redirigido a MercadoPago con el monto y los ítems correctos.
-**Estimación:** 6h / 5 SP
+**Casos borde:** Usuario abandona el pago en MercadoPago (no vuelve) → la orden queda `pendiente_pago` con expiración configurable (ver Historia 3.3); usuario vuelve y reintenta pago sobre la misma orden → reutilizar preferencia guardada, regenerándola solo si MercadoPago la reporta expirada
+**Criterio de aceptación:** Al confirmar el checkout, el comprador es redirigido a MercadoPago con el monto y los ítems correctos, sin métodos de pago offline disponibles.
+**Estimación:** 8h / 7 SP
 
 ### Historia 3.2 — Webhook de confirmación de pago (IPN)
 **Historia:** Como sistema, quiero recibir la notificación de MercadoPago cuando un pago se aprueba, rechaza o queda pendiente, para actualizar el pedido automáticamente.
 **Rol:** Backend
 **Tareas técnicas:**
-- Route Handler `POST /api/webhooks/mercadopago` que valida la notificación y consulta el pago real vía API de MercadoPago (nunca confiar solo en el payload del webhook)
-- Idempotencia: registrar `paymentId` procesados para no aplicar el mismo evento dos veces
-- Actualizar estado de la orden según el estado del pago (`approved`, `rejected`, `pending`, `in_process`)
+- Route Handler `POST /api/webhooks/mercadopago`: valida el header `x-signature` (HMAC, con el body crudo + `data.id` + `ts`, documentado por MercadoPago) antes de tocar la DB o llamar a la API de pagos — rechaza con 401 cualquier request que no venga de MercadoPago. Cierra un vector de abuso/costo (requests falsos disparando llamadas reales a la API de MercadoPago), no de fraude (el fraude ya lo cierra "consultar el pago real").
+- Filtrar por `topic`/`type`: MercadoPago manda notificaciones de `payment` Y de `merchant_order` — el handler solo procesa `type=payment` e ignora (200, no-op) las de `merchant_order`.
+- Consulta el pago real vía API de MercadoPago usando el `payment_id` del body (nunca confiar en el `status` que venga en el payload)
+- Idempotencia: tabla nueva `processed_mercadopago_payments` (`paymentId` unique, `orderId`, `status`, `processedAt`). Un `paymentId` repetido choca contra el unique constraint (mismo patrón que `idempotencyKey` de `orders`, Sprint 2) y el handler responde 200 sin reprocesar. Una tabla en vez de una columna en `orders` porque una orden puede tener más de un intento de pago (rechazado y reintentado) y perdería el historial con una sola columna.
+- Llama a la función compartida `applyPaymentResult(orderId, mpStatus, mpPaymentId)` (ver Historia 3.3) para aplicar el resultado — el webhook NO implementa su propia lógica de transición de estado/liberación de stock, la comparte con el cron de reconciliación.
+- El trabajo (consultar la API + actualizar la DB) se hace de forma síncrona antes de responder 200 — es el propio objetivo del webhook, no una operación que se pueda diferir sin perder la confirmación si la función serverless se corta post-respuesta. Solo el envío de email (Historia 3.4) puede diferirse de forma no bloqueante.
 **Dependencias:** Depende de: Integración Checkout Pro (Historia 3.1)
-**Casos borde:** Webhook duplicado (MercadoPago reintenta si no responde 200 a tiempo) → idempotencia por `paymentId`; webhook que llega antes de que la orden exista en DB (race condition) → reintento/cola; webhook con `external_reference` inexistente → loggear y responder 200 igual para no generar reintentos infinitos
-**Criterio de aceptación:** Un pago aprobado en MercadoPago actualiza el estado de la orden en la base de datos en menos de 10 segundos, sin duplicar procesamiento ante reintentos del webhook.
-**Estimación:** 6h / 8 SP
+**Casos borde:** Webhook duplicado (MercadoPago reintenta si no responde 200 a tiempo) → idempotencia por `paymentId` vía la tabla `processed_mercadopago_payments`; webhook con `external_reference` inexistente → loggear y responder 200 igual para no generar reintentos infinitos. *(Se sacó el caso borde "webhook llega antes de que la orden exista en DB": en esta arquitectura la orden se crea sincrónicamente en Sprint 2 antes de que exista ninguna preferencia de MercadoPago, así que ese race es estructuralmente imposible.)*
+**Criterio de aceptación:** Un pago aprobado en MercadoPago actualiza el estado de la orden en la base de datos en menos de 10 segundos, sin duplicar procesamiento ante reintentos del webhook, y rechaza webhooks con firma inválida.
+**Estimación:** 8h / 10 SP
 
 ### Historia 3.3 — Actualización automática de estado de pedido
 **Historia:** Como administrador, quiero que el estado del pedido refleje automáticamente el resultado del pago, para no tener que verificar manualmente en MercadoPago.
 **Rol:** Backend
 **Tareas técnicas:**
-- Máquina de estados de `order`: `pendiente_pago` → `pagado` / `rechazado` / `en_proceso`
-- El stock **ya se descontó al crear la orden** (Sprint 2, Historia 2.4 — `UPDATE ... WHERE stock >= cantidad` atómico). Un pago aprobado no toca stock, ya está reservado desde el checkout.
-- Si el pago se **rechaza**: liberar el stock reservado (`UPDATE products SET stock = stock + cantidad` por cada `orderItem`).
-- Si el pago **expira** (orden `pendiente_pago` sin resolución después de X minutos, sin que llegue ningún webhook): mismo release de stock. Job periódico (puede reusar el mismo cron de reconciliación de pagos pendientes de la sección de Riesgos de este sprint) que busca órdenes `pendiente_pago` con más de X minutos de antigüedad, confirma contra la API de MercadoPago que efectivamente no hay pago asociado, y libera el stock.
-**Dependencias:** Depende de: Webhook (Historia 3.2); depende de la reserva de stock en la creación de la orden — Sprint 2, Historia 2.4
-**Casos borde:** Pago aprobado pero el stock de esa orden ya no cuadra (ajuste manual de inventario u otra causa excepcional — no debería pasar en el flujo normal, ya que el stock se reservó al crear la orden) → marcar orden para revisión manual, no fallar silenciosamente; job de expiración corre dos veces sobre la misma orden (reintento) → el release de stock debe ser idempotente (no sumar dos veces)
-**Criterio de aceptación:** Toda orden rechazada o expirada libera el stock reservado exactamente una vez; una orden `pendiente_pago` de más de X minutos sin pago es detectada y liberada automáticamente por el job periódico, sin intervención manual.
-**Estimación:** 6h / 5 SP
+- Máquina de estados de `order`: `pendiente_pago` / `en_proceso` (no terminales) → `pagado` / `rechazado` (terminales). El enum `order_status` ya existe desde Sprint 2, no hace falta migración nueva para los valores en sí.
+- Función compartida `applyPaymentResult(orderId, mpStatus, mpPaymentId)` (reusada por el webhook — Historia 3.2 — y por el cron de este historia), que hace en un solo `db.batch()`:
+  - `UPDATE orders SET status=? WHERE id=? AND status NOT IN ('pagado','rechazado')` (0 filas afectadas = la orden ya estaba en un estado terminal, no-op — protege contra doble-procesamiento del webhook y el cron corriendo casi al mismo tiempo). El guard es `NOT IN (pagado, rechazado)`, no `= pendiente_pago`: `en_proceso` sigue siendo un estado abierto que puede resolver a `pagado` o `rechazado` más tarde, y con un guard más estricto esa resolución final se perdería silenciosamente.
+  - Si el resultado es rechazo: `UPDATE products SET stock = stock + cantidad FROM orders WHERE orders.id = orderId AND orders.status NOT IN ('pagado','rechazado') AND products.id = ...` — el UPDATE de stock lleva la MISMA condición correlacionada con el estado de la orden, no solo el UPDATE de `orders`. Sin esto, dos ejecuciones concurrentes (webhook + cron reconciliando casi al mismo tiempo) pueden liberar el mismo stock dos veces aunque el cambio de estado de la orden sí quede protegido — el guard debe cubrir cada UPDATE del batch, no solo uno.
+  - El stock **ya se descontó al crear la orden** (Sprint 2, Historia 2.4). Un pago aprobado no toca stock, ya está reservado desde el checkout.
+- Cron de reconciliación (backstop del webhook): dado que el proyecto corre en **Vercel Hobby** (solo permite 1 cron nativo diario, insuficiente para liberar stock de órdenes abandonadas en minutos/horas), se usa un servicio externo gratuito (ej. cron-job.org) pegándole cada 15 minutos a `GET /api/cron/expire-orders`, protegido con un `CRON_SECRET` (bearer token) — mismo mecanismo que usaría Vercel Cron nativo, solo que disparado externamente. El endpoint busca órdenes `pendiente_pago`/`en_proceso` con más de X minutos de antigüedad, confirma el estado real contra la API de MercadoPago, y llama a `applyPaymentResult`.
+**Dependencias:** Depende de: Webhook (Historia 3.2); depende de la reserva de stock en la creación de la orden — Sprint 2, Historia 2.4; depende de que Historia 3.1 excluya métodos de pago offline (si no, la expiración por minutos/horas libera stock de compras en efectivo legítimas que todavía no se acreditaron)
+**Casos borde:** Pago aprobado pero el stock de esa orden ya no cuadra (ajuste manual de inventario u otra causa excepcional) → marcar orden para revisión manual, no fallar silenciosamente; el cron corre dos veces sobre la misma orden, o corre casi al mismo tiempo que el webhook → idempotente por construcción (el guard `NOT IN (pagado,rechazado)` cubre tanto el cambio de estado como la liberación de stock, ver arriba); orden en `en_proceso` que MercadoPago tarda en resolver → sigue siendo detectada por el cron hasta que llegue a un estado terminal
+**Criterio de aceptación:** Toda orden rechazada o expirada libera el stock reservado exactamente una vez, incluso si el webhook y el cron la procesan casi al mismo tiempo; una orden `pendiente_pago`/`en_proceso` de más de X minutos sin resolución es detectada y liberada automáticamente por el cron externo, sin intervención manual.
+**Estimación:** 9h / 8 SP
 
 ### Historia 3.4 — Notificación automática al cliente
 **Historia:** Como comprador, quiero recibir un email cuando mi pago fue procesado, para saber si mi pedido está confirmado.
@@ -290,43 +297,49 @@
 **Tareas técnicas:**
 - Integrar Resend + React Email para envío y diseño de emails transaccionales
 - Templates de email (componentes React): pago aprobado, pago rechazado
-- Disparar envío desde el mismo flujo que actualiza el estado de la orden (Historia 3.3)
+- Disparar envío desde `applyPaymentResult` (Historia 3.3), de forma no bloqueante (el envío no debe demorar la respuesta al webhook — es la única parte del flujo que puede diferirse)
+- Extraer helper `getPostgresErrorCode(error)` en `src/lib/db-errors.ts` (saca `error.cause.code` de un `DrizzleQueryError` de forma segura) y reusarlo tanto en el código nuevo de este sprint como en `src/actions/orders.ts` (Sprint 2), que ya repetía este patrón dos veces — este sprint agrega un tercer lugar que lo necesita.
 **Dependencias:** Depende de: Actualización automática de estado (Historia 3.3)
-**Casos borde:** Falla el envío de email (proveedor caído) → no debe bloquear la actualización del pedido; se reintenta o se loggea para reenvío manual
+**Casos borde:** Falla el envío de email (proveedor caído) → se loggea el error (orderId + motivo) sin bloquear ni revertir la actualización del pedido ya aplicada; sin reintento automático ni cola — es una pieza de infraestructura entera para un caso raro en una tienda chica, el reenvío manual queda para el panel admin (Sprint 4)
 **Criterio de aceptación:** Al aprobarse o rechazarse un pago, el comprador recibe un email automático en menos de 1 minuto.
 **Estimación:** 5h / 5 SP
 
 ### Testing Sprint 3
-**Tarea:** Simulación de pagos en ambiente sandbox de MercadoPago (aprobado, rechazado, pendiente) verificando actualización de orden, descuento/liberación de stock y disparo de email correspondiente, con tests de integración en Vitest. Incluir test de webhook duplicado.
+**Tarea:** Simulación de pagos en ambiente sandbox de MercadoPago (aprobado, rechazado, pendiente) verificando actualización de orden, descuento/liberación de stock y disparo de email correspondiente, con tests de integración en Vitest. Incluir test de webhook duplicado, y un test de integración contra Postgres real que dispare `applyPaymentResult` dos veces "casi concurrentemente" sobre la misma orden (webhook + cron simulados) para probar que ni el estado ni el stock se duplican — mismo patrón que los tests de concurrencia de Historia 2.4.
 **Rol:** Backend
-**Criterio de aceptación:** Los 3 escenarios de pago (aprobado/rechazado/pendiente) se comportan correctamente en sandbox, y un webhook reenviado dos veces no duplica efectos.
-**Estimación:** 5h / 3 SP
+**Criterio de aceptación:** Los 3 escenarios de pago (aprobado/rechazado/pendiente) se comportan correctamente en sandbox, un webhook reenviado dos veces no duplica efectos, y una ejecución concurrente de webhook+cron sobre la misma orden libera el stock exactamente una vez.
+**Estimación:** 7h / 5 SP
 
 ### Riesgos (específico de este sprint)
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
 | Ambiente test vs producción de MercadoPago usan credenciales distintas y a veces comportamiento distinto | Un flujo que funciona en sandbox falla en producción | Probar explícitamente con credenciales de producción en modo real antes del cierre del sprint 6, no solo en sandbox |
-| Reintentos de webhook por timeout (MP reintenta si no responde 200 rápido) | Procesamiento duplicado de un mismo pago | Responder 200 inmediatamente y procesar de forma asíncrona/idempotente por `paymentId` |
-| Notificación de pago que nunca llega (webhook perdido) | Orden queda "pendiente" eternamente aunque el pago se acreditó | Job periódico (cron de Vercel) que consulta el estado real de pagos pendientes con más de X minutos vía API de MercadoPago, como respaldo del webhook |
+| Reintentos de webhook por timeout (MP reintenta si no responde 200 rápido) | Procesamiento duplicado de un mismo pago | Responder 200 solo después de aplicar el resultado (síncrono, ver Historia 3.2); idempotente por `paymentId` vía `processed_mercadopago_payments` de todas formas, así que un reintento nunca duplica efectos aunque tarde |
+| Notificación de pago que nunca llega (webhook perdido) | Orden queda "pendiente" eternamente aunque el pago se acreditó | Cron externo cada 15 min (cron-job.org, dado el límite de Vercel Hobby) que consulta el estado real de pagos pendientes vía API de MercadoPago, como respaldo del webhook |
 | Confusión entre `external_reference` y `payment_id` al validar el webhook | Actualizar la orden incorrecta o no encontrarla | Siempre consultar el pago completo por `payment_id` contra la API de MercadoPago antes de actuar, nunca confiar en el body crudo del POST |
 | Discrepancia de monto entre lo cobrado y el pedido (manipulación del front) | Pérdida económica | Recalcular el monto en backend a partir de los ítems de la orden al crear la preferencia, nunca aceptar un monto enviado por el cliente |
-| Cold start de funciones serverless demorando la respuesta al webhook | MercadoPago podría reintentar si la respuesta tarda demasiado | Mantener el Route Handler del webhook liviano (solo valida y encola), procesar el resto de forma asíncrona |
+| Cold start de funciones serverless demorando la respuesta al webhook | MercadoPago podría reintentar si la respuesta tarda demasiado | Mantener el Route Handler del webhook liviano en todo lo que no sea la confirmación del pago en sí; solo el email se difiere |
+| Métodos de pago offline (efectivo/transferencia) tardan días en acreditarse | Expiración por minutos/horas liberaría stock de compras legítimas en curso | `excluded_payment_types` en la preferencia (Historia 3.1): solo tarjeta y dinero en cuenta |
+| Endpoint del cron de reconciliación sin autenticación | Cualquiera podría dispararlo y forzar reconciliaciones arbitrarias | `CRON_SECRET` como bearer token, igual que protegería un cron nativo de Vercel |
 
 **Definición de Hecho del Sprint:**
 - [ ] Pago completo probado en sandbox: aprobado, rechazado y pendiente
-- [ ] Webhook idempotente y sin duplicar efectos ante reintentos
+- [ ] Webhook idempotente y sin duplicar efectos ante reintentos, con firma validada
+- [ ] Cron externo de reconciliación corriendo cada 15 min contra `/api/cron/expire-orders`, protegido por `CRON_SECRET`
 - [ ] Emails de confirmación/rechazo llegando correctamente
-- [ ] Stock se descuenta/libera correctamente según resultado del pago
+- [ ] Stock se descuenta/libera correctamente según resultado del pago, incluso bajo ejecución concurrente webhook+cron
 - [ ] Demo al cliente realizada
 
 **Recortables si el sprint se atrasa:**
-- No recortable: Webhook + actualización de estado de orden (es el corazón del sistema de cobro)
+- No recortable: Webhook + actualización de estado de orden + liberación de stock (es el corazón del sistema de cobro; sin esto hay riesgo real de sobreventa/inventario fantasma)
 - Recortable a Sprint 4: Email de "pago pendiente/en proceso" (dejar solo aprobado/rechazado, que son los casos más frecuentes)
 
 **Demo al cliente:** Completar una compra de punta a punta pagando con una tarjeta de test de MercadoPago y mostrar cómo el pedido cambia de estado automáticamente y llega el email de confirmación.
 
-**Total Sprint 3:** 28h / 26 SP
+> **Nota de revisión de arquitectura (`/plan-eng-review`):** revisado antes de implementarse. La revisión propia encontró 6 vacíos de arquitectura (dónde vive el `preferenceId` para reutilizar preferencias, cómo se modela la idempotencia del webhook, extracción de `applyPaymentResult` compartido entre webhook y cron, el guard con `UPDATE` condicional para liberación de stock idempotente, validación de firma del webhook, y un caso borde obsoleto que se sacó del backlog) y 2 de calidad de código (extracción de `getPostgresErrorCode`, política de fallo de email sin cola de reintentos). Una revisión cruzada independiente (outside voice) encontró **2 bugs reales** en las propias decisiones de esta revisión — el `UPDATE` de liberación de stock no quedaba protegido por el mismo guard que la orden (podía liberarse dos veces), y el guard trataba `en_proceso` como estado terminal cuando no lo es — ambos corregidos antes de implementar. También encontró una restricción de plataforma no contemplada (Vercel Hobby solo permite cron diario, resuelto con un cron externo cada 15 min) y un vacío de negocio (métodos de pago offline de MercadoPago tardan días en acreditarse, resuelto excluyéndolos de la preferencia). El total subió de 28h/26 SP a 37h/35 SP por esto — principalmente Historia 3.2 (tabla de idempotencia + firma) e Historia 3.3 (función compartida + guards corregidos + cron externo).
+
+**Total Sprint 3:** 37h / 35 SP
 
 > **Nota:** +2h/+2 SP respecto de la estimación original — la Historia 3.3 pasó de "liberar stock si expira" (vago) a un job periódico concreto con criterio de aceptación propio, encontrado necesario en la revisión de arquitectura del Sprint 2 (ver nota ahí).
 
@@ -629,10 +642,10 @@
 |---|---|---|---|---|
 | 1 | Setup + Catálogo + Ficha de producto + spike MercadoPago | 34h | 24 SP | 10/07/2026 |
 | 2 | Precios mayorista/minorista + Carrito + Checkout sin registro | 29h | 24 SP | 17/07/2026 |
-| 3 | MercadoPago + Webhooks + Notificaciones | 28h | 26 SP | 24/07/2026 |
+| 3 | MercadoPago + Webhooks + Notificaciones | 37h | 35 SP | 24/07/2026 |
 | 4 | Panel admin: login/roles + CRUD productos | 22h | 17 SP | 31/07/2026 |
 | 5 | Panel admin: pedidos, envíos y stock | 22h | 17 SP | 07/08/2026 |
 | 6 | Ajuste final de marca + Testing general + Deploy | 16h | 13 SP | 14/08/2026 |
-| **Total** | | **151h** | **121 SP** | **14/08/2026** |
+| **Total** | | **160h** | **130 SP** | **14/08/2026** |
 
-> Sprint 2 y 3 subieron respecto de la estimación original (24h→29h y 26h→28h) tras la revisión de arquitectura (`/plan-eng-review`) del Sprint 2 — ver las notas en cada sprint para el detalle de qué cambió y por qué. La fecha de entrega final no se mueve: son ~7h más repartidas en sprints que ya tenían margen dentro de la semana.
+> Sprint 2 subió respecto de la estimación original (24h→29h) tras su propia revisión de arquitectura (`/plan-eng-review`). Sprint 3 subió más de lo habitual (28h→37h, +9h) tras su revisión: la mitad de ese incremento vino de dos bugs reales que encontró una revisión cruzada independiente (outside voice) en las propias decisiones de la revisión — liberación de stock no protegida contra doble-ejecución, y un estado intermedio (`en_proceso`) tratado como final cuando no lo es — y la otra mitad de una restricción de plataforma no contemplada (Vercel Hobby no soporta cron frecuente) y un vacío de negocio (métodos de pago offline de MercadoPago). Ver la nota dentro de Sprint 3 para el detalle. La fecha de entrega final no se mueve por ahora (asume que la semana 3 absorbe el trabajo extra); si en la práctica no alcanza, es la primera candidata a mover.
