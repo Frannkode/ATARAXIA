@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product-gallery";
+import { ProductPurchaseBox } from "@/components/product-purchase-box";
 import { getProductById } from "@/db/queries/products";
 import { buildCatalogHref } from "@/lib/catalog-url";
-import { formatPrice } from "@/lib/format";
+import { calculateLineItem } from "@/lib/pricing";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,6 +15,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   }
 
   const outOfStock = product.stock <= 0;
+  const initialPreview = calculateLineItem(product, 1);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
@@ -36,20 +38,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           <h1 className="text-2xl font-semibold text-foreground">{product.name}</h1>
 
-          <div className="flex flex-col gap-1">
-            <p className="text-2xl font-semibold text-foreground">
-              {formatPrice(product.retailPrice)}
-            </p>
-            {product.wholesalePrice && product.wholesaleMinQty && (
-              <p className="text-sm text-muted-foreground">
-                Comprando {product.wholesaleMinQty} unidades o más:{" "}
-                <span className="font-medium text-foreground">
-                  {formatPrice(product.wholesalePrice)}
-                </span>{" "}
-                c/u
-              </p>
-            )}
-          </div>
+          <ProductPurchaseBox
+            productId={product.id}
+            wholesaleMinQty={product.wholesaleMinQty}
+            outOfStock={outOfStock}
+            initialPreview={initialPreview}
+          />
 
           <p className="text-sm font-medium">
             {outOfStock ? (

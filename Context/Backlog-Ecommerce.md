@@ -160,35 +160,40 @@
 **Historia:** Como backend, quiero que cada producto tenga precio minorista y mayorista con una cantidad mínima de activación, para soportar ambos tipos de venta desde el mismo catálogo.
 **Rol:** Backend
 **Tareas técnicas:**
-- Extender schema de `product`: `precioMayorista`, `cantidadMinimaMayorista`
-- Lógica de cálculo de precio unitario según cantidad en el Route Handler de carrito/checkout (fuente de verdad en backend, no confiar en el frontend)
-- Endpoint que recalcula precio total dado un `productId` + `cantidad`
+- ~~Extender schema de `product`~~ — ya existe desde la Historia 1.2 (`retailPrice`, `wholesalePrice`, `wholesaleMinQty`), no hay tarea de migración acá.
+- `src/lib/pricing.ts` con `calculateLineItem(product, cantidad)`: convierte `retailPrice`/`wholesalePrice` a `Number` explícitamente al entrar (Drizzle los devuelve como **string** por ser columnas `numeric`) y calcula todo en `number`; solo se vuelve a convertir a string al persistir en `orderItem` (Historia 2.4). La conversión vive en un único lugar (esta función), no se repite en cada componente que toca precios.
+- Instalar **Vitest** (elegido en el stack desde el Sprint 1, nunca instalado — no hay un solo test en el repo todavía): `vitest.config.ts` + primer test suite para esta función.
 **Dependencias:** Depende de: Modelo de datos base — Sprint 1
-**Casos borde:** Producto sin precio mayorista configurado → se usa minorista sin importar cantidad; cantidad exactamente igual al mínimo mayorista → debe aplicar el precio mayorista (regla ">=", no ">")
-**Criterio de aceptación:** Al calcular el precio de un producto con cantidad ≥ mínimo mayorista, el backend devuelve el precio mayorista correcto.
+**Casos borde:** Producto sin precio mayorista configurado → se usa minorista sin importar cantidad; cantidad exactamente igual al mínimo mayorista → debe aplicar el precio mayorista (regla ">=", no ">"); cantidad ≤ 0 → rechazar antes de calcular
+**Tests requeridos (Vitest, sin DB — función pura):** qty < mínimo → minorista; qty === mínimo (boundary) → mayorista; qty > mínimo → mayorista; sin `wholesalePrice` configurado → siempre minorista; qty ≤ 0 → rechaza
+**Criterio de aceptación:** Al calcular el precio de un producto con cantidad ≥ mínimo mayorista, la función devuelve el precio mayorista correcto, con los 5 casos de arriba cubiertos por tests.
 **Estimación:** 5h / 5 SP
 
 ### Historia 2.2 — Cálculo de precio dinámico en frontend
 **Historia:** Como comprador, quiero ver cómo cambia el precio a medida que modifico la cantidad, para entender cuándo conviene comprar mayorista.
 **Rol:** Frontend
 **Tareas técnicas:**
-- Selector de cantidad en la ficha de producto con indicador visual ("A partir de X unidades, precio mayorista")
-- Consumir el endpoint de cálculo de precio del backend (no calcular en cliente para evitar desincronización)
+- Selector de cantidad en la ficha de producto (client component) con indicador visual ("A partir de X unidades, precio mayorista")
+- Server Action que llama a `calculateLineItem` (Historia 2.1) para el preview — no se calcula en el cliente, evita desincronización. Es la misma función que después usa el checkout, no una segunda implementación.
 **Dependencias:** Depende de: Modelo de precios (Historia 2.1)
-**Casos borde:** Usuario ingresa cantidad 0 o negativa → input bloqueado/validado
-**Criterio de aceptación:** El precio mostrado en pantalla siempre coincide con el que calcula el backend al agregar al carrito.
+**Casos borde:** Usuario ingresa cantidad 0 o negativa → input bloqueado/validado; falla la Server Action (red) → mostrar estado de error en el preview, no romper la página
+**Tests requeridos:** cantidad inválida bloquea el input (component test); preview refleja el mismo valor que devuelve `calculateLineItem` (evita que el preview y el cálculo real diverjan)
+**Criterio de aceptación:** El precio mostrado en pantalla siempre coincide con el que calcula la misma función `calculateLineItem` al agregar al carrito.
 **Estimación:** 4h / 3 SP
 
 ### Historia 2.3 — Carrito de compras
 **Historia:** Como comprador, quiero agregar, quitar y modificar cantidades de productos en un carrito, para armar mi pedido antes de pagar.
 **Rol:** Frontend
 **Tareas técnicas:**
-- Store de carrito con Zustand persistido en localStorage (soporta guest)
+- Store de carrito con Zustand persistido en localStorage. Guarda **solo `{ productId, cantidad }`**, nunca una copia del producto (nombre/precio/imagen) — evita que el carrito muestre datos viejos si el producto cambió o se desactivó.
+- `getProductsByIds(ids)` en `src/db/queries/products.ts`: query batcheada (`inArray`, no un loop de `getProductById`) que trae los productos del carrito. A diferencia de `getProducts()`/`getProductById()`, **no filtra por `active`** — necesita traer productos desactivados igual para poder mostrar su nombre en el aviso "ya no está disponible" en vez de un item fantasma sin info.
+- `validateCartItems(items)` compartida (`src/lib/cart-validation.ts`): decide si cada item es válido (existe + activo + stock suficiente). La usa tanto el componente de carrito (para mostrar avisos) como el checkout (Historia 2.4, para bloquear el submit) — una sola regla de "qué es inválido", no dos versiones que puedan divergir.
 - Componente de carrito (drawer o página) con edición de cantidades y eliminación de ítems
-- Recalcular precio total (incluyendo saltos mayorista/minorista) en cada cambio
+- Recalcular precio total (incluyendo saltos mayorista/minorista, vía `calculateLineItem` de la Historia 2.1) en cada cambio
 **Dependencias:** Depende de: Cálculo de precio dinámico (Historia 2.2)
-**Casos borde:** Producto en el carrito que fue desactivado/eliminado del catálogo mientras el usuario navegaba → se marca en el carrito y se bloquea el checkout hasta que se remueva; stock insuficiente para la cantidad en carrito → aviso y ajuste sugerido
-**Criterio de aceptación:** El carrito persiste entre recargas de página y refleja el precio correcto ante cualquier cambio de cantidad.
+**Casos borde:** Producto en el carrito que fue desactivado/eliminado del catálogo mientras el usuario navegaba → `validateCartItems` lo marca inválido, se muestra con su nombre (gracias a que `getProductsByIds` no filtra por active) y se bloquea el checkout hasta que se remueva; stock insuficiente para la cantidad en carrito → aviso y ajuste sugerido; carrito con productos agregados hace semanas cuyo ID ya no existe en la base → tratado igual que "ya no disponible", no rompe el render
+**Tests requeridos:** `validateCartItems` — producto inexistente → inválido; producto inactivo → inválido (con nombre disponible); stock < cantidad → inválido con cantidad sugerida; todo OK → válido. `getProductsByIds` — array vacío → resultado vacío sin query; IDs mixtos (activos + inactivos) → trae todos
+**Criterio de aceptación:** El carrito persiste entre recargas de página, refleja el precio correcto ante cualquier cambio de cantidad, y un producto inválido se muestra identificado por nombre en vez de como item fantasma.
 **Estimación:** 5h / 5 SP
 
 ### Historia 2.4 — Checkout sin registro
@@ -196,32 +201,39 @@
 **Rol:** Frontend + Backend
 **Tareas técnicas:**
 - Formulario de checkout (nombre, email, teléfono, dirección de envío) validado con Zod
-- Server Action / Route Handler `POST /api/orders` que crea el pedido en estado `pendiente_pago` con snapshot de productos y precios (no referencias que puedan cambiar después)
-- Modelo `order` y `orderItem` en Drizzle
+- Modelo `order` y `orderItem` en Drizzle. `order` incluye una columna `idempotencyKey` (única) además del estado (`pendiente_pago`/`pagado`/`rechazado`/`en_proceso`).
+- **Server Action** `createOrder` (no un Route Handler REST — nada más lo consume que este formulario): revalida los cart items server-side con `validateCartItems` (Historia 2.3, no confía en lo que mandó el cliente), y crea la orden + `orderItem`s con **snapshot de precios ya convertidos a string** (el `Number` de `calculateLineItem` se vuelve a convertir al persistir).
+- **Reserva de stock atómica y segura ante concurrencia:** `UPDATE products SET stock = stock - $cantidad WHERE id = $id AND stock >= $cantidad` dentro de la misma transacción que crea la orden. Postgres bloquea la fila en el `UPDATE`, así que dos compras concurrentes por la última unidad se serializan solas — la segunda ve el `WHERE` fallar y la orden no se crea. (Un `BEGIN/COMMIT` sin este `WHERE` NO alcanza: dos transacciones pueden leer el mismo stock antes de que ninguna commitee.)
+- **Idempotency key contra doble-submit:** el formulario genera un UUID al montarse (campo oculto). `createOrder` lo guarda en `idempotencyKey` (columna única); un segundo submit con la misma key devuelve la orden ya creada en vez de crear una segunda. Necesario porque el stock ya se descuenta acá (no en Sprint 3): sin esto, un doble-click o un retry de red con conexión inestable puede generar dos órdenes que restan stock real por una sola compra que ni siquiera pagó todavía.
+- Página `/pedidos/[id]` (nueva): confirmación post-checkout con el resumen del pedido y estado "pendiente de pago" — placeholder hasta que el Sprint 3 conecte el redirect real a MercadoPago. Sin esto, "completar un checkout de punta a punta" (ver Demo al cliente, abajo) se corta en la nada.
 **Dependencias:** Depende de: Carrito (Historia 2.3)
-**Casos borde:** Email inválido o campos vacíos → validación bloqueante con mensajes claros; doble submit del formulario (doble click) → debounce/deshabilitar botón tras el primer envío para evitar pedidos duplicados
-**Criterio de aceptación:** Un visitante sin cuenta puede completar el formulario y generar un pedido en estado pendiente, listo para pasar a pago.
-**Estimación:** 6h / 5 SP
+**Casos borde:** Email inválido o campos vacíos → validación bloqueante con mensajes claros; doble submit del formulario (doble click, o retry de red) → resuelto por la `idempotencyKey`, no solo por deshabilitar el botón en el cliente; stock se agota entre que el usuario ve el carrito y aprieta "confirmar" → el `UPDATE ... WHERE stock >= cantidad` no actualiza filas, la orden no se crea, se muestra error claro
+**Tests requeridos:** `createOrder` con stock suficiente → crea orden + descuenta stock; dos llamadas concurrentes por la última unidad → solo una crea orden (test de integración contra Postgres real, no mockeable); mismo `idempotencyKey` dos veces → devuelve la misma orden, no crea una segunda; cart item inválido al momento del submit → rechaza sin crear orden parcial
+**Criterio de aceptación:** Un visitante sin cuenta puede completar el formulario y generar un pedido en estado pendiente con el stock ya reservado, sin poder duplicar la orden con un doble-submit, y cae en una página de confirmación real.
+**Estimación:** 9h / 8 SP
 
 ### Testing Sprint 2
-**Tarea:** Tests de lógica de precios (unitario, tabla de casos: cantidad justo debajo/en/encima del mínimo mayorista) y test de integración del flujo carrito → checkout → creación de orden, todo con Vitest.
+**Tarea:** Setup de Vitest (config + primer test) y suite completa: `calculateLineItem` (tabla de boundary cases), `validateCartItems`, y un test de integración contra Postgres real para `createOrder` cubriendo el caso de dos llamadas concurrentes por la última unidad de stock (no es mockeable — la garantía es del `WHERE` de Postgres, no de la lógica de JS).
 **Rol:** Backend
-**Criterio de aceptación:** Suite verde cubriendo los saltos de precio y la creación de orden con snapshot correcto de precios.
-**Estimación:** 4h / 2 SP
+**Criterio de aceptación:** Suite verde cubriendo los saltos de precio, la creación de orden con snapshot correcto de precios, y el test de concurrencia de stock.
+**Estimación:** 6h / 3 SP
 
 **Definición de Hecho del Sprint:**
 - [ ] Flujo completo carrito → checkout → orden creada funcionando en staging
 - [ ] Precios mayorista/minorista validados con casos límite
-- [ ] Tests de precios y checkout en verde
+- [ ] Vitest instalado y la suite completa en verde (incluyendo el test de concurrencia de stock)
+- [ ] Doble-submit del checkout probado manualmente sin generar orden duplicada
 - [ ] Demo al cliente realizada
 
 **Recortables si el sprint se atrasa:**
-- No recortable: Modelo de precios, Checkout sin registro
+- No recortable: Modelo de precios, Checkout sin registro, reserva atómica de stock, idempotency key (dejó de ser "nice to have" en la revisión de arquitectura: sin esto el checkout sin cuenta puede duplicar órdenes que restan stock real)
 - Recortable a Sprint 3: Indicador visual de "precio mayorista a partir de X" (puede lanzarse con precio recalculado sin el mensaje explicativo)
 
-**Demo al cliente:** Agregar productos al carrito en distintas cantidades viendo el salto a precio mayorista, y completar un checkout de punta a punta sin loguearse.
+**Demo al cliente:** Agregar productos al carrito en distintas cantidades viendo el salto a precio mayorista, y completar un checkout de punta a punta sin loguearse, cayendo en una página de confirmación del pedido.
 
-**Total Sprint 2:** 24h / 20 SP
+**Total Sprint 2:** 29h / 24 SP
+
+> **Nota de revisión de arquitectura (`/plan-eng-review`):** este sprint pasó por una revisión de arquitectura antes de implementarse. Se removió una tarea redundante (el schema de precios ya existía), se consolidó el cálculo de precio en una sola función en vez de un endpoint REST separado, y una revisión cruzada independiente encontró 5 vacíos reales que cambiaron el plan: manejo de precios como string (Drizzle + `numeric`), la necesidad de un `WHERE` condicional para que la reserva de stock sea realmente segura ante concurrencia (no alcanza con "una transacción"), que `getProductsByIds` no debe filtrar productos inactivos, que la falta de idempotencia en el checkout pasó de "gap aceptable" a requisito duro dado que ya se reserva stock real sin pago confirmado, y la necesidad de dejar la liberación de stock por abandono como requisito explícito del Sprint 3 (ver nota ahí). El total subió de 24h/20 SP a 29h/24 SP por esto — principalmente la idempotency key y la página de confirmación de pedido.
 
 ---
 
@@ -264,12 +276,13 @@
 **Rol:** Backend
 **Tareas técnicas:**
 - Máquina de estados de `order`: `pendiente_pago` → `pagado` / `rechazado` / `en_proceso`
-- Liberar stock reservado si el pago es rechazado o expira
-- Descontar stock definitivamente cuando el pago se aprueba
-**Dependencias:** Depende de: Webhook (Historia 3.2)
-**Casos borde:** Pago aprobado pero stock ya no disponible (vendido por otro canal mientras tanto) → marcar orden para revisión manual, no fallar silenciosamente
-**Criterio de aceptación:** Toda orden pagada queda en estado `pagado` con el stock descontado, sin intervención manual.
-**Estimación:** 4h / 3 SP
+- El stock **ya se descontó al crear la orden** (Sprint 2, Historia 2.4 — `UPDATE ... WHERE stock >= cantidad` atómico). Un pago aprobado no toca stock, ya está reservado desde el checkout.
+- Si el pago se **rechaza**: liberar el stock reservado (`UPDATE products SET stock = stock + cantidad` por cada `orderItem`).
+- Si el pago **expira** (orden `pendiente_pago` sin resolución después de X minutos, sin que llegue ningún webhook): mismo release de stock. Job periódico (puede reusar el mismo cron de reconciliación de pagos pendientes de la sección de Riesgos de este sprint) que busca órdenes `pendiente_pago` con más de X minutos de antigüedad, confirma contra la API de MercadoPago que efectivamente no hay pago asociado, y libera el stock.
+**Dependencias:** Depende de: Webhook (Historia 3.2); depende de la reserva de stock en la creación de la orden — Sprint 2, Historia 2.4
+**Casos borde:** Pago aprobado pero el stock de esa orden ya no cuadra (ajuste manual de inventario u otra causa excepcional — no debería pasar en el flujo normal, ya que el stock se reservó al crear la orden) → marcar orden para revisión manual, no fallar silenciosamente; job de expiración corre dos veces sobre la misma orden (reintento) → el release de stock debe ser idempotente (no sumar dos veces)
+**Criterio de aceptación:** Toda orden rechazada o expirada libera el stock reservado exactamente una vez; una orden `pendiente_pago` de más de X minutos sin pago es detectada y liberada automáticamente por el job periódico, sin intervención manual.
+**Estimación:** 6h / 5 SP
 
 ### Historia 3.4 — Notificación automática al cliente
 **Historia:** Como comprador, quiero recibir un email cuando mi pago fue procesado, para saber si mi pedido está confirmado.
@@ -313,7 +326,9 @@
 
 **Demo al cliente:** Completar una compra de punta a punta pagando con una tarjeta de test de MercadoPago y mostrar cómo el pedido cambia de estado automáticamente y llega el email de confirmación.
 
-**Total Sprint 3:** 26h / 24 SP
+**Total Sprint 3:** 28h / 26 SP
+
+> **Nota:** +2h/+2 SP respecto de la estimación original — la Historia 3.3 pasó de "liberar stock si expira" (vago) a un job periódico concreto con criterio de aceptación propio, encontrado necesario en la revisión de arquitectura del Sprint 2 (ver nota ahí).
 
 ---
 
@@ -613,9 +628,11 @@
 | Sprint | Objetivo | Horas | Story Points | Fecha estimada de entrega |
 |---|---|---|---|---|
 | 1 | Setup + Catálogo + Ficha de producto + spike MercadoPago | 34h | 24 SP | 10/07/2026 |
-| 2 | Precios mayorista/minorista + Carrito + Checkout sin registro | 24h | 20 SP | 17/07/2026 |
-| 3 | MercadoPago + Webhooks + Notificaciones | 26h | 24 SP | 24/07/2026 |
+| 2 | Precios mayorista/minorista + Carrito + Checkout sin registro | 29h | 24 SP | 17/07/2026 |
+| 3 | MercadoPago + Webhooks + Notificaciones | 28h | 26 SP | 24/07/2026 |
 | 4 | Panel admin: login/roles + CRUD productos | 22h | 17 SP | 31/07/2026 |
 | 5 | Panel admin: pedidos, envíos y stock | 22h | 17 SP | 07/08/2026 |
 | 6 | Ajuste final de marca + Testing general + Deploy | 16h | 13 SP | 14/08/2026 |
-| **Total** | | **144h** | **115 SP** | **14/08/2026** |
+| **Total** | | **151h** | **121 SP** | **14/08/2026** |
+
+> Sprint 2 y 3 subieron respecto de la estimación original (24h→29h y 26h→28h) tras la revisión de arquitectura (`/plan-eng-review`) del Sprint 2 — ver las notas en cada sprint para el detalle de qué cambió y por qué. La fecha de entrega final no se mueve: son ~7h más repartidas en sprints que ya tenían margen dentro de la semana.

@@ -89,6 +89,25 @@ export async function getProducts({
 
 export type ProductWithRelations = Awaited<ReturnType<typeof getProducts>>["products"][number];
 
+// Para resolver el carrito: a diferencia de getProducts()/getProductById(),
+// NO filtra por active. Necesita poder traer un producto desactivado para
+// que validateCartItems tenga su nombre y pueda avisar "ya no disponible" en
+// vez de mostrar un item fantasma sin info.
+export async function getProductsByIds(ids: string[]) {
+  const validIds = ids.filter(isValidUuid);
+  if (validIds.length === 0) return [];
+
+  return db.query.products.findMany({
+    where: (product, { inArray }) => inArray(product.id, validIds),
+    with: {
+      category: true,
+      images: {
+        orderBy: (image, { asc }) => asc(image.position),
+      },
+    },
+  });
+}
+
 export async function getProductById(id: string) {
   if (!isValidUuid(id)) return undefined;
 

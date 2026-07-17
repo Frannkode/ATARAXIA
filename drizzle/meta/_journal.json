@@ -8,6 +8,27 @@
       "when": 1782952408383,
       "tag": "0000_thin_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784268870512,
+      "tag": "0001_glamorous_angel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784269103637,
+      "tag": "0002_jazzy_thunderbolt_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784291098522,
+      "tag": "0003_solid_iron_fist",
+      "breakpoints": true
     }
   ]
 }
