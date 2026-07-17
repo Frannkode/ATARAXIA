@@ -2,11 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ProductWithRelations } from "@/db/queries/products";
 import { formatPrice } from "@/lib/format";
-
-const PLACEHOLDER_IMAGE = "https://placehold.co/600x750.png?text=Sin+imagen";
+import { PLACEHOLDER_PRODUCT_IMAGE } from "@/lib/placeholder-image";
 
 export function ProductCard({ product }: { product: ProductWithRelations }) {
-  const coverImage = product.images[0]?.url ?? PLACEHOLDER_IMAGE;
+  const coverImage = product.images[0]?.url ?? PLACEHOLDER_PRODUCT_IMAGE;
   const outOfStock = product.stock <= 0;
 
   return (

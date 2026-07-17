@@ -90,8 +90,12 @@ export async function getProducts({
 export type ProductWithRelations = Awaited<ReturnType<typeof getProducts>>["products"][number];
 
 export async function getProductById(id: string) {
+  if (!isValidUuid(id)) return undefined;
+
+  // Un producto desactivado (soft delete, Sprint 4) no debe ser accesible por
+  // link directo: se trata igual que "no existe" de cara al público.
   return db.query.products.findFirst({
-    where: (product, { eq }) => eq(product.id, id),
+    where: (product, { eq, and }) => and(eq(product.id, id), eq(product.active, true)),
     with: {
       category: true,
       images: {
