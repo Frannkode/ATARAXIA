@@ -345,80 +345,87 @@
 
 ---
 
-## Sprint 4 — Panel admin: login/roles + CRUD de productos
+## Sprint 4 — Panel admin: login + CRUD de productos
 
 **Objetivo:** Dar al personal autorizado un panel privado para gestionar el catálogo (precios, descripciones, categorías) sin tocar la base de datos directamente.
 
 **Definición de Listo (DoR):**
-- Lista de usuarios administradores iniciales (email de cada uno) y si hay distinción de roles (ej. "admin total" vs "solo stock")
-- Definición de si el panel admin vive en un subdominio/ruta separada (ej. `/admin`) — confirmado con el cliente
+- ~~Lista de usuarios administradores iniciales~~ — Resuelto: un solo admin (`poncefrancomiguel@gmail.com`), un solo nivel de permiso. Sin infraestructura de roles por ahora (ver nota de revisión de arquitectura abajo).
+- Panel admin en la ruta `/admin` del mismo dominio (por defecto, salvo que se indique lo contrario antes del deploy).
 
-### Historia 4.1 — Login de administrador con roles
+### Historia 4.1 — Login de administrador
 **Historia:** Como administrador, quiero iniciar sesión con mi usuario y contraseña, para acceder al panel de gestión de forma segura.
 **Rol:** Backend
 **Tareas técnicas:**
 - Configurar Better Auth con proveedor de email + contraseña para el acceso admin
-- Definir tabla de usuarios admin y rol por usuario en Drizzle, integrada al esquema de Better Auth
+- **Conexión separada solo para Better Auth** vía `drizzle-orm/neon-serverless` (WebSocket) — el `db` principal de la app (Sprint 1-3) sigue usando `neon-http` + `db.batch()` sin tocarse. Better Auth necesita transacciones reales para crear usuarios/sesiones (bug conocido y reportado contra `neon-http`, ver GitHub issue #4747 de better-auth), y `neon-http` no las soporta. Cambio quirúrgico acotado a lo nuevo, cero riesgo de regresión en código ya testeado.
+- Rate limiting de intentos de login respaldado en la propia Postgres (opción nativa de Better Auth), no en memoria (inútil en serverless) ni en un servicio externo nuevo (Redis/Upstash) — mismo espíritu que `orderRateLimitAttempts` de Sprint 2.
+- Sin tabla/campo de roles: un solo nivel de permiso hoy, cualquier sesión válida de Better Auth tiene acceso total. Se agrega infraestructura de roles recién si aparece un segundo nivel de permiso real.
+- Bootstrap de la cuenta inicial: script de seed separado (no una ruta de registro pública) que llama a la API server-side de Better Auth una sola vez con el email/contraseña elegidos. La página de login solo expone el formulario de inicio de sesión — nunca existe una ruta de registro.
 - Configurar expiración/rotación de sesión y flujo de logout
 **Dependencias:** Ninguna (independiente del resto del sistema)
-**Casos borde:** Intentos de login fallidos repetidos → rate limiting mediante el plugin de Better Auth; sesión expirada → el frontend debe redirigir a login, no mostrar un panel roto
-**Criterio de aceptación:** Un usuario admin válido puede loguearse y su sesión persiste vía cookie segura; credenciales incorrectas son rechazadas con mensaje genérico (sin revelar si el email existe).
-**Estimación:** 5h / 5 SP
+**Casos borde:** Intentos de login fallidos repetidos → rate limiting respaldado en DB; sesión expirada → el frontend debe redirigir a login, no mostrar un panel roto
+**Criterio de aceptación:** El admin puede loguearse y su sesión persiste vía cookie segura; credenciales incorrectas son rechazadas con mensaje genérico (sin revelar si el email existe).
+**Estimación:** 6h / 6 SP
 
-### Historia 4.2 — Middleware de protección de rutas admin
-**Historia:** Como sistema, quiero que ninguna ruta del panel ni de la API admin sea accesible sin una sesión válida, para proteger la información sensible del negocio.
+### Historia 4.2 — Protección de rutas y Server Actions admin
+**Historia:** Como sistema, quiero que ninguna ruta, página ni Server Action del panel sea accesible sin una sesión válida, para proteger la información sensible del negocio.
 **Rol:** Backend
 **Tareas técnicas:**
-- Middleware de Next.js que valida la sesión de Better Auth en todas las rutas `/admin` y `/api/admin/*`
-- Redirección a login si no hay sesión válida
-- Verificación de rol para acciones sensibles vía el plugin de roles de Better Auth (ej. solo "admin total" puede eliminar productos)
+- `src/proxy.ts` (Next.js 16 renombró `middleware.ts` a `proxy.ts` y lo redujo a un "thin proxy", no pensado para chequeos pesados de sesión contra la DB): usa `getSessionCookie()` de Better Auth (chequeo liviano de presencia de cookie, sin golpear la base) para redirigir a `/admin/login` si no hay cookie de sesión.
+- Helper compartido `requireAdminSession()` (llama a `auth.api.getSession()`, la validación real contra la DB) — **se llama en dos lugares, no solo uno**: (a) cada Server Action de admin, y (b) el layout de `/admin` (Server Component), ya que las páginas del panel (listado de productos, y en Sprint 5 el detalle de pedidos con PII del comprador) se renderizan leyendo la base directo, sin pasar por ninguna Server Action — sin este segundo chequeo, el proxy liviano quedaría como única defensa para esas lecturas, exactamente la falla de capa única que este historia busca evitar.
+- Sin verificación de rol (no aplica, un solo nivel de permiso — ver Historia 4.1).
 **Dependencias:** Depende de: Login de administrador (Historia 4.1)
-**Casos borde:** Acceso directo por URL a una ruta admin sin sesión → redirección a login, no error 500; sesión válida pero de rol insuficiente → 403 explícito
-**Criterio de aceptación:** Ninguna ruta ni Route Handler del panel admin responde datos sin una sesión válida.
-**Estimación:** 3h / 2 SP
+**Casos borde:** Acceso directo por URL a una ruta admin sin sesión → redirección a login, no error 500
+**Criterio de aceptación:** Ninguna página ni Server Action del panel admin responde datos sin una sesión válida.
+**Estimación:** 4h / 3 SP
 
 ### Historia 4.3 — CRUD de productos en panel admin
 **Historia:** Como administrador, quiero editar precio, descripción, stock e imágenes de un producto, para mantener el catálogo actualizado sin depender de un desarrollador.
 **Rol:** Frontend + Backend
 **Tareas técnicas:**
-- Route Handlers/Server Actions `POST/PUT/DELETE /api/admin/products`
-- Formulario de edición con subida de imágenes a Cloudinary
+- Server Actions de admin (crear/editar/soft-delete producto), todas empezando con `requireAdminSession()`
+- **Subida de imágenes directa y firmada al navegador** (no a través de un Server Action): un Server Action chico genera una firma temporal de Cloudinary (usando el API secret server-side, nunca expuesto al cliente) y el navegador sube el archivo directo a Cloudinary. Necesario porque Vercel tiene un límite de ~4.5MB por request — proxiar el archivo a través de un Server Action rompería con fotos de producto reales en buena resolución. Es el patrón que Cloudinary documenta para este caso, no un workaround.
+- Soft delete **reutiliza la columna `active` que ya existe desde Sprint 1** (la misma que ya filtra el catálogo público y la validación de carrito) — no hace falta una columna nueva.
+- **Listado admin con una query separada que NO filtra por `active`** (a diferencia del catálogo público): muestra también los productos inactivos, marcados visualmente, con una acción para reactivarlos. Sin esto, un producto "borrado" desaparecería también del panel admin, sin forma de deshacer el borrado sin tocar la base a mano — contradice el objetivo del sprint.
 - Listado admin de productos con acceso rápido a edición (UI con shadcn/ui)
 **Dependencias:** Depende de: Modelo de datos — Sprint 1; Protección de rutas admin (Historia 4.2)
-**Casos borde:** Eliminar un producto que ya tiene órdenes asociadas → soft delete (marcar inactivo), nunca borrado físico, para no romper el historial de pedidos; subida de imagen que falla → mensaje de error sin perder los demás campos ya completados del formulario
+**Casos borde:** Eliminar un producto que ya tiene órdenes asociadas → soft delete (marcar inactivo), nunca borrado físico — el historial de pedidos no se rompe porque `orderItems` ya guarda nombre/precio propios (Sprint 2), independientes de la fila viva del producto; subida de imagen que falla → mensaje de error sin perder los demás campos ya completados del formulario
 **Criterio de aceptación:** Un cambio de precio o descripción hecho en el panel se refleja inmediatamente en el catálogo público.
-**Estimación:** 6h / 5 SP
+**Estimación:** 9h / 8 SP
 
 ### Historia 4.4 — CRUD de categorías
 **Historia:** Como administrador, quiero crear, editar y eliminar categorías, para reorganizar el catálogo cuando cambie la colección.
 **Rol:** Frontend + Backend
 **Tareas técnicas:**
-- Route Handlers/Server Actions `POST/PUT/DELETE /api/admin/categories`
+- Server Actions de admin (crear/editar/borrar categoría), con `requireAdminSession()`
 - UI de gestión de categorías en el panel (shadcn/ui)
 **Dependencias:** Depende de: CRUD de productos (Historia 4.3)
-**Casos borde:** Eliminar una categoría que tiene productos asociados → bloquear la eliminación o pedir reasignar los productos a otra categoría primero
+**Casos borde:** Eliminar una categoría que tiene productos asociados → bloquear la eliminación (mensaje explícito, sin auto-reasignar). Solo cuentan los productos **activos** para este chequeo — un producto ya soft-deleted no debe bloquear la eliminación de una categoría, sería lógica muerta desde la perspectiva del admin.
 **Criterio de aceptación:** Las categorías creadas/editadas desde el panel aparecen inmediatamente en el filtro del catálogo público.
 **Estimación:** 4h / 3 SP
 
 ### Testing Sprint 4
-**Tarea:** Tests de autenticación (login válido/inválido, expiración de sesión, acceso sin sesión) y tests de CRUD de productos/categorías incluyendo el caso de soft delete con órdenes asociadas, con Vitest.
+**Tarea:** Tests de autenticación (login válido/inválido, expiración de sesión, acceso sin sesión, rate limit de intentos fallidos), tests de `requireAdminSession()` en Server Actions Y en el layout de páginas, y tests de CRUD de productos/categorías incluyendo el soft delete con órdenes asociadas y el bloqueo de categoría solo por productos activos, con Vitest.
 **Rol:** Backend
-**Criterio de aceptación:** Suite verde cubriendo accesos no autorizados y la regla de soft delete.
-**Estimación:** 4h / 2 SP
+**Criterio de aceptación:** Suite verde cubriendo accesos no autorizados (tanto Server Actions como páginas), la regla de soft delete, y el caso borde de categoría con productos inactivos.
+**Estimación:** 6h / 3 SP
 
 **Definición de Hecho del Sprint:**
-- [ ] Login admin funcionando con protección real de rutas
-- [ ] CRUD de productos y categorías operativo end-to-end desde el panel
-- [ ] Ningún endpoint admin accesible sin sesión válida (verificado manualmente)
+- [ ] Login admin funcionando con protección real de rutas Y páginas (no solo Server Actions)
+- [ ] CRUD de productos (con subida de imágenes directa a Cloudinary) y categorías operativo end-to-end desde el panel
+- [ ] Ningún endpoint, página ni Server Action admin accesible sin sesión válida (verificado manualmente)
 - [ ] Demo al cliente realizada
 
 **Recortables si el sprint se atrasa:**
-- No recortable: Login + protección de rutas (sin esto no hay panel seguro), CRUD de productos
+- No recortable: Login + protección de rutas y páginas (sin esto no hay panel seguro), CRUD de productos
 - Recortable a Sprint 5: CRUD de categorías (el cliente puede seguir un sprint más con las categorías cargadas por seed/desarrollador)
 
 **Demo al cliente:** Loguearse en el panel admin, editar el precio y la descripción de un producto en vivo, y verlo reflejado inmediatamente en la tienda pública.
 
-**Total Sprint 4:** 22h / 17 SP
+> **Nota de revisión de arquitectura (`/plan-eng-review`):** revisado antes de implementarse. La revisión propia resolvió el bloqueante del DoR (admin único, sin roles) y encontró 4 decisiones de arquitectura (conexión separada para Better Auth, rate limit respaldado en DB, bootstrap del admin vía seed sin ruta de registro pública, y confirmar el patrón proxy.ts + doble chequeo de sesión ya usado). Una revisión cruzada independiente (outside voice) encontró **2 hallazgos críticos** que la revisión propia no vio: (1) `requireAdminSession()` solo cubría Server Actions, dejando las páginas admin (Server Components que leen la DB directo) protegidas únicamente por el chequeo liviano de cookie del proxy — el mismo problema de capa única que el sprint busca evitar; y (2) subir imágenes vía Server Action choca con el límite de ~4.5MB de Vercel, resuelto con subida directa firmada al navegador (el patrón que Cloudinary recomienda, no un workaround). También encontró que Better Auth y el driver `neon-http` del resto de la app son incompatibles (transacciones reales requeridas, bug conocido reportado contra Better Auth), resuelto con una conexión `neon-serverless` separada solo para las tablas de auth. El total subió de 22h/17 SP a 29h/23 SP por esto — principalmente Historia 4.1 (conexión separada + bootstrap) e Historia 4.3 (subida firmada + query admin separada).
+
+**Total Sprint 4:** 29h / 23 SP
 
 ---
 
@@ -643,9 +650,9 @@
 | 1 | Setup + Catálogo + Ficha de producto + spike MercadoPago | 34h | 24 SP | 10/07/2026 |
 | 2 | Precios mayorista/minorista + Carrito + Checkout sin registro | 29h | 24 SP | 17/07/2026 |
 | 3 | MercadoPago + Webhooks + Notificaciones | 37h | 35 SP | 24/07/2026 |
-| 4 | Panel admin: login/roles + CRUD productos | 22h | 17 SP | 31/07/2026 |
+| 4 | Panel admin: login + CRUD productos | 29h | 23 SP | 31/07/2026 |
 | 5 | Panel admin: pedidos, envíos y stock | 22h | 17 SP | 07/08/2026 |
 | 6 | Ajuste final de marca + Testing general + Deploy | 16h | 13 SP | 14/08/2026 |
-| **Total** | | **160h** | **130 SP** | **14/08/2026** |
+| **Total** | | **167h** | **136 SP** | **14/08/2026** |
 
-> Sprint 2 subió respecto de la estimación original (24h→29h) tras su propia revisión de arquitectura (`/plan-eng-review`). Sprint 3 subió más de lo habitual (28h→37h, +9h) tras su revisión: la mitad de ese incremento vino de dos bugs reales que encontró una revisión cruzada independiente (outside voice) en las propias decisiones de la revisión — liberación de stock no protegida contra doble-ejecución, y un estado intermedio (`en_proceso`) tratado como final cuando no lo es — y la otra mitad de una restricción de plataforma no contemplada (Vercel Hobby no soporta cron frecuente) y un vacío de negocio (métodos de pago offline de MercadoPago). Ver la nota dentro de Sprint 3 para el detalle. La fecha de entrega final no se mueve por ahora (asume que la semana 3 absorbe el trabajo extra); si en la práctica no alcanza, es la primera candidata a mover.
+> Sprint 2 subió respecto de la estimación original (24h→29h) tras su propia revisión de arquitectura (`/plan-eng-review`). Sprint 3 subió más de lo habitual (28h→37h, +9h) tras su revisión: la mitad de ese incremento vino de dos bugs reales que encontró una revisión cruzada independiente (outside voice) en las propias decisiones de la revisión — liberación de stock no protegida contra doble-ejecución, y un estado intermedio (`en_proceso`) tratado como final cuando no lo es — y la otra mitad de una restricción de plataforma no contemplada (Vercel Hobby no soporta cron frecuente) y un vacío de negocio (métodos de pago offline de MercadoPago). Sprint 4 subió de 22h/17 SP a 29h/23 SP (+7h) por su propia revisión: la voz independiente encontró que el chequeo de sesión solo cubría Server Actions (dejando páginas admin protegidas únicamente por el proxy liviano) y que subir imágenes vía Server Action choca con el límite de ~4.5MB de Vercel, además de una incompatibilidad real entre Better Auth y el driver `neon-http` del resto de la app. Ver las notas dentro de cada sprint para el detalle. La fecha de entrega final no se mueve por ahora (asume que cada semana absorbe su propio trabajo extra); si en la práctica no alcanza, son las primeras candidatas a mover.

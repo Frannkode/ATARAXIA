@@ -33,8 +33,8 @@ Esto es lo que necesito confirmado para no frenar el desarrollo a mitad de sprin
 
 ## Antes del Sprint 4 (panel admin)
 
-- 🔴 **Lista de administradores iniciales** (email de cada uno) y si hay más de un nivel de permiso (ej. "puede editar precios" vs "solo puede ver pedidos").
-- ¿El panel admin va en una ruta del mismo dominio (`tudominio.com/admin`) o en un subdominio (`admin.tudominio.com`)? Esto no cambia el desarrollo pero sí la configuración de DNS más adelante.
+- ~~🔴 **Lista de administradores iniciales**~~ — Resuelto (2026-07-17): un solo admin (`poncefrancomiguel@gmail.com`), un solo rol/nivel de permiso. Se puede agregar más roles después si hace falta.
+- ¿El panel admin va en una ruta del mismo dominio (`tudominio.com/admin`) o en un subdominio (`admin.tudominio.com`)? Esto no cambia el desarrollo pero sí la configuración de DNS más adelante. *(Se arranca con `/admin` como ruta por defecto — recomendado, más simple — salvo que se indique lo contrario antes del deploy.)*
 
 ## Antes del Sprint 5 (pedidos, envíos, stock)
 
