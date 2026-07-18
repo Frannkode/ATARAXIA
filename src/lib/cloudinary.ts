@@ -7,4 +7,6 @@ cloudinary.config({
   secure: true,
 });
 
+export const CLOUDINARY_UPLOAD_FOLDER = "ataraxia/products";
+
 export { cloudinary };

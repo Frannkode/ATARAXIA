@@ -43,6 +43,13 @@
       "when": 1784317370903,
       "tag": "0005_nifty_maginty",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784331405503,
+      "tag": "0006_chubby_boom_boom",
+      "breakpoints": true
     }
   ]
 }

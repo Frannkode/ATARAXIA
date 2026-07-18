@@ -123,3 +123,32 @@ export async function getProductById(id: string) {
     },
   });
 }
+
+// Panel admin (Historia 4.3): a diferencia de getProducts()/getProductById(),
+// NO filtra por active — sin esto un producto "borrado" (soft delete)
+// desaparecería también del panel admin, sin forma de reactivarlo.
+export async function getAllProductsForAdmin() {
+  return db.query.products.findMany({
+    orderBy: (product, { desc }) => desc(product.createdAt),
+    with: {
+      category: true,
+      images: {
+        orderBy: (image, { asc }) => asc(image.position),
+      },
+    },
+  });
+}
+
+export async function getProductByIdForAdmin(id: string) {
+  if (!isValidUuid(id)) return undefined;
+
+  return db.query.products.findFirst({
+    where: (product, { eq }) => eq(product.id, id),
+    with: {
+      category: true,
+      images: {
+        orderBy: (image, { asc }) => asc(image.position),
+      },
+    },
+  });
+}
