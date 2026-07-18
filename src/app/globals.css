@@ -4,8 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Paleta de marca — PLACEHOLDER hasta que el cliente confirme los HEX
- * exactos (ver Context/Preguntas-Cliente.md, sección Sprint 1).
+ * Paleta de marca — validada por contraste WCAG AA en Historia 6.1 (todos
+ * los pares texto/fondo del tema, incluidos ambos modos, dan >= 4.5:1).
  * Cambiar únicamente estos tres valores actualiza toda la app.
  */
 @theme {

@@ -1,4 +1,5 @@
 import { Body, Container, Head, Heading, Hr, Html, Preview, Section, Text } from "@react-email/components";
+import { EMAIL_BRAND_COLORS } from "@/lib/email/brand-colors";
 
 export interface PaymentRejectedEmailProps {
   orderId: string;
@@ -11,9 +12,24 @@ export function PaymentRejectedEmail({ orderId, customerName, orderUrl }: Paymen
     <Html>
       <Head />
       <Preview>No pudimos procesar tu pago — pedido #{orderId.slice(0, 8)}</Preview>
-      <Body style={{ fontFamily: "sans-serif", backgroundColor: "#f5f5f5" }}>
-        <Container style={{ backgroundColor: "#ffffff", padding: "24px", borderRadius: "8px" }}>
-          <Heading style={{ fontSize: "20px" }}>No pudimos procesar tu pago</Heading>
+      <Body
+        style={{
+          fontFamily: "sans-serif",
+          backgroundColor: EMAIL_BRAND_COLORS.background,
+          color: EMAIL_BRAND_COLORS.text,
+        }}
+      >
+        <Container
+          style={{
+            backgroundColor: EMAIL_BRAND_COLORS.cardBackground,
+            padding: "24px",
+            borderRadius: "8px",
+            borderTop: `4px solid ${EMAIL_BRAND_COLORS.destructive}`,
+          }}
+        >
+          <Heading style={{ fontSize: "20px", color: EMAIL_BRAND_COLORS.text }}>
+            No pudimos procesar tu pago
+          </Heading>
           <Text>
             Hola {customerName}, tu pago para el pedido #{orderId.slice(0, 8)} no pudo completarse.
           </Text>
@@ -26,7 +42,9 @@ export function PaymentRejectedEmail({ orderId, customerName, orderUrl }: Paymen
           </Text>
 
           <Section style={{ marginTop: "24px" }}>
-            <Text style={{ color: "#666", fontSize: "12px" }}>ATARAXIA — cualquier duda, escribinos.</Text>
+            <Text style={{ color: EMAIL_BRAND_COLORS.mutedText, fontSize: "12px" }}>
+              ATARAXIA — cualquier duda, escribinos.
+            </Text>
           </Section>
         </Container>
       </Body>

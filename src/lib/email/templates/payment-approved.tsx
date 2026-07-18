@@ -1,4 +1,5 @@
 import { Body, Container, Head, Heading, Hr, Html, Preview, Section, Text } from "@react-email/components";
+import { EMAIL_BRAND_COLORS } from "@/lib/email/brand-colors";
 import { formatPrice } from "@/lib/format";
 
 export interface PaymentApprovedEmailProps {
@@ -20,9 +21,24 @@ export function PaymentApprovedEmail({
     <Html>
       <Head />
       <Preview>Tu pago fue aprobado — pedido #{orderId.slice(0, 8)}</Preview>
-      <Body style={{ fontFamily: "sans-serif", backgroundColor: "#f5f5f5" }}>
-        <Container style={{ backgroundColor: "#ffffff", padding: "24px", borderRadius: "8px" }}>
-          <Heading style={{ fontSize: "20px" }}>¡Tu pago fue aprobado!</Heading>
+      <Body
+        style={{
+          fontFamily: "sans-serif",
+          backgroundColor: EMAIL_BRAND_COLORS.background,
+          color: EMAIL_BRAND_COLORS.text,
+        }}
+      >
+        <Container
+          style={{
+            backgroundColor: EMAIL_BRAND_COLORS.cardBackground,
+            padding: "24px",
+            borderRadius: "8px",
+            borderTop: `4px solid ${EMAIL_BRAND_COLORS.accent}`,
+          }}
+        >
+          <Heading style={{ fontSize: "20px", color: EMAIL_BRAND_COLORS.text }}>
+            ¡Tu pago fue aprobado!
+          </Heading>
           <Text>Hola {customerName}, confirmamos tu pago para el pedido #{orderId.slice(0, 8)}.</Text>
 
           <Hr />
@@ -42,7 +58,9 @@ export function PaymentApprovedEmail({
           </Text>
 
           <Section style={{ marginTop: "24px" }}>
-            <Text style={{ color: "#666", fontSize: "12px" }}>ATARAXIA — gracias por tu compra.</Text>
+            <Text style={{ color: EMAIL_BRAND_COLORS.mutedText, fontSize: "12px" }}>
+              ATARAXIA — gracias por tu compra.
+            </Text>
           </Section>
         </Container>
       </Body>

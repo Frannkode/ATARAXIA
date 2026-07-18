@@ -4,8 +4,11 @@ import { CartLink } from "@/components/cart-link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tienda",
-  description: "E-commerce de indumentaria",
+  title: {
+    default: "ATARAXIA",
+    template: "%s · ATARAXIA",
+  },
+  description: "ATARAXIA — indumentaria",
 };
 
 export default function RootLayout({
@@ -19,7 +22,7 @@ export default function RootLayout({
         <header className="border-b border-border">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
             <Link href="/" className="font-semibold text-foreground">
-              Tienda
+              ATARAXIA
             </Link>
             <CartLink />
           </div>
