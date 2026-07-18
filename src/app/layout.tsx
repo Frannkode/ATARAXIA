@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CartLink } from "@/components/cart-link";
+import { Logo } from "@/components/logo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +22,8 @@ export default function RootLayout({
       <body>
         <header className="border-b border-border">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link href="/" className="font-semibold text-foreground">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
+              <Logo className="h-7 w-7" />
               ATARAXIA
             </Link>
             <CartLink />
