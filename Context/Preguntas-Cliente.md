@@ -38,8 +38,8 @@ Esto es lo que necesito confirmado para no frenar el desarrollo a mitad de sprin
 
 ## Antes del Sprint 5 (pedidos, envíos, stock)
 
-- **Estados de envío** que van a usar en el día a día (ej. "preparando", "despachado", "entregado" — ¿son estos o manejan otros nombres/pasos?).
-- Ya preguntado en Sprint 1, pero confirmar de nuevo acá porque afecta directamente el control de stock: ¿el stock se maneja por producto simple o por variante (talle/color con cantidades independientes)?
+- ~~**Estados de envío**~~ — Resuelto (2026-07-18): `preparando` / `despachado` / `entregado`.
+- ~~¿Stock por producto simple o por variante?~~ — Resuelto (2026-07-18): simple, sin variantes (como ya está construido desde Sprint 1).
 
 ## Antes del Sprint 6 (identidad final y lanzamiento)
 

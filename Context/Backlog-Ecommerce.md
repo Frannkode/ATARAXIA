@@ -434,15 +434,16 @@
 **Objetivo:** Que el personal pueda operar el día a día de pedidos (ver, actualizar envío, corregir estado) y mantener el stock bajo control.
 
 **Definición de Listo (DoR):**
-- Definición de los estados de envío que maneja el cliente (ej. "preparando", "despachado", "entregado")
-- Definición de si el control de stock es por producto simple o por variante (talle/color) — impacta el modelo si no se cerró en Sprint 1
+- ~~Estados de envío~~ — Resuelto (2026-07-18): `preparando` / `despachado` / `entregado`.
+- ~~¿Stock simple o por variante?~~ — Resuelto (2026-07-18): simple, sin variantes (ya construido así desde Sprint 1).
 
 ### Historia 5.1 — Listado y detalle de pedidos en panel admin
 **Historia:** Como administrador, quiero ver todos los pedidos con su estado y detalle, para gestionar la operación diaria de la tienda.
 **Rol:** Frontend + Backend
 **Tareas técnicas:**
-- Route Handler `GET /api/admin/orders` con filtros por estado y fecha
+- Query de admin con filtros por estado y fecha (Server Component, reusa el patrón de `requireAdminSession()` en el layout — no un Route Handler separado, consistente con Sprint 4)
 - Vista de detalle de orden (productos, datos de envío, estado de pago, estado de envío)
+- El estado de envío no es significativo en una orden que no está `pagado` (no tiene sentido "preparando" un pedido rechazado) — el listado/detalle solo muestra el estado de envío cuando `status = 'pagado'`, aunque la columna internamente siempre tenga un valor por default.
 **Dependencias:** Depende de: Modelo de Order — Sprint 2; Protección de rutas admin — Sprint 4
 **Casos borde:** Pedido con pago rechazado que igual aparece en el listado → debe distinguirse visualmente de los pagados, para no confundir al personal de despacho
 **Criterio de aceptación:** El administrador puede ver todos los pedidos y filtrarlos por estado sin necesidad de acceder a la base de datos.
@@ -452,11 +453,11 @@
 **Historia:** Como administrador, quiero marcar un pedido como "despachado" o "entregado", para que el estado de envío esté siempre actualizado.
 **Rol:** Frontend + Backend
 **Tareas técnicas:**
-- Route Handler `PATCH /api/admin/orders/:id/shipping-status`
-- Selector de estado de envío en el detalle de pedido
-- (Opcional según DoR) Campo de número de seguimiento manual
+- Columna nueva `shippingStatus` (enum `preparando`/`despachado`/`entregado`) directo en `orders`, default `preparando` desde la creación — mismo patrón que el estado de pago (una orden tiene un solo estado de envío a la vez, no un historial), no hace falta una tabla separada.
+- Server Action de admin para actualizarlo, con `requireAdminSession()`
+- Marcar como "entregado" un pedido que no está `pagado` → bloqueado (no solo advertido), mensaje explícito
 **Dependencias:** Depende de: Listado de pedidos (Historia 5.1)
-**Casos borde:** Intentar marcar como "entregado" un pedido que no está pagado → bloquear la transición o pedir confirmación explícita
+**Casos borde:** Intentar marcar como "entregado" un pedido que no está pagado → bloqueado
 **Criterio de aceptación:** Cambiar el estado de envío desde el panel se refleja inmediatamente en el detalle del pedido.
 **Estimación:** 4h / 3 SP
 
@@ -464,44 +465,63 @@
 **Historia:** Como administrador, quiero poder corregir manualmente el estado de un pedido, para resolver casos excepcionales que el sistema automático no contempla.
 **Rol:** Backend
 **Tareas técnicas:**
-- Route Handler `PATCH /api/admin/orders/:id/status` con override manual
-- Registro de auditoría (quién cambió el estado y cuándo)
+- Server Action de admin con override manual del estado de pago (`pendiente_pago`/`pagado`/`rechazado`/`en_proceso`), protegida con `requireAdminSession()`.
+- **No reusa el guard fijo de `applyPaymentResult`** (`NOT IN (pagado, rechazado)`) — ese guard bloquearía justo los casos para los que existe esta historia (corregir un pedido YA en un estado terminal). El override usa su propio guard de **concurrencia optimista**: `WHERE status = <el estado que el admin vio al cargar la página>`, para no pisar una resolución automática (webhook/cron) más reciente que la carga de la página, pero SÍ permitiendo corregir cualquier estado, incluidos los terminales.
+- Comparte con `applyPaymentResult` el **mecanismo** de CTE de un solo statement (transición + ajuste de stock atómicos), no el guard — se extrae la parte de "un statement con CTE que ata el ajuste de stock al resultado de la transición" a una función de más bajo nivel, parametrizada por la condición del guard y la dirección del ajuste de stock.
+- **Re-reserva de stock**: si el override mueve una orden de un estado que ya había liberado stock (`rechazado`) a `pagado`, hay que volver a descontar stock (no solo dejarlo liberado) — con la misma red de seguridad de `stock_non_negative` que ya protege Historia 2.4; si no alcanza el stock, el override se rechaza con un mensaje explícito en vez de aprobar una venta sin stock real.
+- **`fromStatus` del audit log sale del `RETURNING` del propio UPDATE**, no de un valor leído antes en el formulario — evita registrar una transición que ya no es real si el estado cambió entre que el admin cargó la página y confirmó.
+- El insert en el log de auditoría va **dentro del mismo CTE atómico** que la transición — si el guard bloquea el UPDATE (0 filas), el insert de auditoría tampoco se aplica; de lo contrario quedaría un registro de auditoría de un cambio que nunca ocurrió.
+- El override manual **no dispara el email transaccional** de pago aprobado/rechazado (Historia 3.4) — es a menudo una corrección administrativa, no un evento de pago real de cara al comprador.
+- Tabla nueva `orderStatusAuditLog` (orderId, changedByUserId, fromStatus, toStatus, reason, changedAt). Se mantiene `changedByUserId` aunque hoy solo haya un admin (Sprint 4) — sale gratis de `requireAdminSession()` y queda listo si se suma un segundo admin más adelante.
 **Dependencias:** Depende de: Actualización automática de estado — Sprint 3
-**Casos borde:** Cambio manual que contradice el estado real del pago en MercadoPago → permitir pero dejar registrado en el log de auditoría para evitar confusiones futuras
-**Criterio de aceptación:** Un administrador puede forzar el cambio de estado de un pedido y queda registro de quién lo hizo.
-**Estimación:** 3h / 2 SP
-
-### Historia 5.4 — Control de stock
-**Historia:** Como administrador, quiero ver y editar el stock disponible de cada producto, para evitar vender lo que no tengo.
-**Rol:** Frontend + Backend
-**Tareas técnicas:**
-- Vista de stock en el panel con edición inline (shadcn/ui)
-- Descuento automático de stock ya conectado desde Sprint 3 (verificar consistencia)
-- Alerta visual de stock bajo/agotado en el panel
-**Dependencias:** Depende de: Actualización automática de stock — Sprint 3; CRUD de productos — Sprint 4
-**Casos borde:** Dos administradores editando el stock del mismo producto al mismo tiempo → última escritura gana (aceptable para este volumen), documentado como limitación conocida; stock llevado a negativo por edición manual → validar que no sea menor a 0
-**Criterio de aceptación:** El stock mostrado en el panel siempre coincide con el disponible real, y un producto sin stock no puede comprarse en la tienda pública.
+**Casos borde:** Cambio manual que contradice el estado real del pago en MercadoPago → permitir pero dejar registrado en el log de auditoría; override a `pagado` sin stock suficiente → rechazar con mensaje explícito, no aprobar una venta sin stock real
+**Criterio de aceptación:** Un administrador puede forzar el cambio de estado de un pedido y queda registro de quién lo hizo, cuándo, y desde/hacia qué estado — sin duplicar ni perder ajustes de stock.
 **Estimación:** 6h / 5 SP
 
-### Testing Sprint 5
-**Tarea:** Test de integración del flujo completo pedido pagado → cambio de estado de envío → verificación de que el stock descontado en Sprint 3 es consistente con lo mostrado en el panel, con Vitest.
+### Historia 5.3.1 — Chargeback/reembolso después del envío no libera stock fantasma
+**Historia:** Como sistema, cuando un pago se revierte (chargeback o reembolso) después de que el pedido ya se despachó o entregó, quiero que el pago se marque rechazado sin liberar stock que ya no existe físicamente.
 **Rol:** Backend
-**Criterio de aceptación:** El flujo completo pedido→envío→stock se valida sin inconsistencias entre lo que ve el admin y lo que hay en base de datos.
-**Estimación:** 4h / 2 SP
+**Tareas técnicas:**
+- `applyPaymentResult` (Sprint 3) chequea `shippingStatus` antes de liberar stock: si la orden ya está `despachado` o `entregado`, la transición a `rechazado` se aplica igual (el pago sí se revirtió), pero el UPDATE de liberación de stock se omite — queda para revisión manual del admin.
+**Dependencias:** Depende de: Estado de envío (Historia 5.2)
+**Casos borde:** Chargeback de MercadoPago (`charged_back`) o reembolso (`refunded`) sobre un pedido ya entregado → no libera stock automáticamente
+**Criterio de aceptación:** Un chargeback sobre un pedido ya despachado/entregado actualiza el estado de pago sin inflar el stock con unidades que ya se enviaron.
+**Estimación:** 2h / 2 SP
+
+### Historia 5.4 — Control de stock
+**Historia:** Como administrador, quiero ajustar el stock disponible de cada producto, para mantenerlo al día sin depender de reeditar todo el producto.
+**Rol:** Frontend + Backend
+**Tareas técnicas:**
+- Vista de stock dedicada en el panel (producto + stock actual), separada del formulario completo de edición de producto (Sprint 4) — acceso rápido para la tarea repetitiva de ajustar inventario.
+- **Ajuste por delta ("sumar/restar N"), no por valor absoluto**: el campo de edición es cuánto sumar o restar (ej. "+10" por mercadería que llegó, "-2" por una corrección), no "poner el stock en X". `stock = stock + delta` es seguro bajo concurrencia sin importar qué pase al mismo tiempo (mismo patrón ya usado en la liberación de stock de Sprint 3) — evita de raíz la carrera real: un admin corrigiendo stock mientras un cliente compra ese mismo producto en simultáneo (la carrera real no es "dos admins a la vez", como asumía la redacción original de esta historia).
+- Alerta visual de stock bajo/agotado en el panel
+**Dependencias:** Depende de: Actualización automática de stock — Sprint 3; CRUD de productos — Sprint 4
+**Casos borde:** Ajuste que llevaría el stock a negativo → rechazado por `stock_non_negative` (Historia 1.2), mensaje explícito en vez de un 500
+**Criterio de aceptación:** El stock mostrado en el panel siempre coincide con el disponible real, y un producto sin stock no puede comprarse en la tienda pública.
+**Estimación:** 5h / 4 SP
+
+### Testing Sprint 5
+**Tarea:** Tests de integración contra Postgres real: override manual con guard de concurrencia optimista (incluyendo el caso "el estado cambió entre que el admin cargó la página y confirmó"), re-reserva de stock en override a `pagado` (incluyendo sin stock suficiente), atomicidad del audit log con el guard bloqueado, chargeback post-envío sin liberar stock, y ajuste de stock por delta bajo escritura concurrente (checkout real decrementando al mismo tiempo).
+**Rol:** Backend
+**Criterio de aceptación:** El flujo completo pedido→envío→stock se valida sin inconsistencias entre lo que ve el admin y lo que hay en base de datos, incluidos los casos de concurrencia encontrados en la revisión de arquitectura.
+**Estimación:** 6h / 4 SP
 
 **Definición de Hecho del Sprint:**
 - [ ] Panel de pedidos operativo con filtros por estado
-- [ ] Estado de envío y de pedido editables desde el panel
-- [ ] Stock visible, editable y consistente con las ventas automáticas
+- [ ] Estado de envío y de pedido editables desde el panel, con auditoría atómica del override manual
+- [ ] Stock ajustable por delta, visible y consistente con las ventas automáticas
+- [ ] Chargeback/reembolso post-envío no infla stock fantasma
 - [ ] Demo al cliente realizada
 
 **Recortables si el sprint se atrasa:**
-- No recortable: Listado/detalle de pedidos, Control de stock
-- Recortable a Sprint 6: Registro de auditoría de cambios manuales de estado (puede lanzarse sin el log, agregándolo después)
+- No recortable: Listado/detalle de pedidos, Control de stock, chargeback post-envío (es un hueco de inventario real, no cosmético)
+- Recortable a Sprint 6: nada nuevo — el registro de auditoría ya no es recortable porque es parte del mismo mecanismo atómico que el override (separarlos reintroduciría el problema de atomicidad que encontró la revisión)
 
 **Demo al cliente:** Recorrer un pedido real desde que se pagó hasta marcarlo como despachado, y mostrar cómo el stock se actualiza solo tras la venta.
 
-**Total Sprint 5:** 22h / 17 SP
+> **Nota de revisión de arquitectura (`/plan-eng-review`):** revisado antes de implementarse. La revisión propia decidió modelar el envío como columna en `orders` (no tabla de historial) y reusar el mecanismo de CTE de Sprint 3 para el override manual. Una revisión cruzada independiente (outside voice) encontró que esa segunda decisión, tal como estaba planteada, era autocontradictoria: el guard fijo de `applyPaymentResult` (`NOT IN (pagado, rechazado)`) habría bloqueado exactamente los casos que Historia 5.3 existe para resolver (corregir un estado ya terminal). También encontró que faltaba re-reservar stock al revertir una orden a `pagado`, que un chargeback después del envío liberaría stock fantasma (llevó a agregar la Historia 5.3.1), que el audit log no era atómico con el cambio de estado, que `fromStatus` se podía capturar obsoleto, y que la carrera de concurrencia de Historia 5.4 estaba mal identificada (no es admin-vs-admin, es admin-vs-checkout-de-cliente) — resuelto con ajuste por delta en vez de valor absoluto. El total subió de 22h/17 SP a 28h/23 SP por esto.
+
+**Total Sprint 5:** 28h / 23 SP
 
 ---
 
@@ -651,8 +671,8 @@
 | 2 | Precios mayorista/minorista + Carrito + Checkout sin registro | 29h | 24 SP | 17/07/2026 |
 | 3 | MercadoPago + Webhooks + Notificaciones | 37h | 35 SP | 24/07/2026 |
 | 4 | Panel admin: login + CRUD productos | 29h | 23 SP | 31/07/2026 |
-| 5 | Panel admin: pedidos, envíos y stock | 22h | 17 SP | 07/08/2026 |
+| 5 | Panel admin: pedidos, envíos y stock | 28h | 23 SP | 07/08/2026 |
 | 6 | Ajuste final de marca + Testing general + Deploy | 16h | 13 SP | 14/08/2026 |
-| **Total** | | **167h** | **136 SP** | **14/08/2026** |
+| **Total** | | **173h** | **142 SP** | **14/08/2026** |
 
 > Sprint 2 subió respecto de la estimación original (24h→29h) tras su propia revisión de arquitectura (`/plan-eng-review`). Sprint 3 subió más de lo habitual (28h→37h, +9h) tras su revisión: la mitad de ese incremento vino de dos bugs reales que encontró una revisión cruzada independiente (outside voice) en las propias decisiones de la revisión — liberación de stock no protegida contra doble-ejecución, y un estado intermedio (`en_proceso`) tratado como final cuando no lo es — y la otra mitad de una restricción de plataforma no contemplada (Vercel Hobby no soporta cron frecuente) y un vacío de negocio (métodos de pago offline de MercadoPago). Sprint 4 subió de 22h/17 SP a 29h/23 SP (+7h) por su propia revisión: la voz independiente encontró que el chequeo de sesión solo cubría Server Actions (dejando páginas admin protegidas únicamente por el proxy liviano) y que subir imágenes vía Server Action choca con el límite de ~4.5MB de Vercel, además de una incompatibilidad real entre Better Auth y el driver `neon-http` del resto de la app. Ver las notas dentro de cada sprint para el detalle. La fecha de entrega final no se mueve por ahora (asume que cada semana absorbe su propio trabajo extra); si en la práctica no alcanza, son las primeras candidatas a mover.
