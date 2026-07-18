@@ -1,3 +1,5 @@
+// Círculo (equilibrio, completitud) atravesado por una onda en calma — la
+// imagen que evoca "ataraxia": una superficie sin perturbación.
 export function Logo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
@@ -8,11 +10,15 @@ export function Logo({ className }: { className?: string }) {
         </linearGradient>
       </defs>
       <rect width="32" height="32" rx="8" fill="url(#logo-g)" />
-      <circle cx="16" cy="16" r="9" fill="none" stroke="#ffffff" strokeWidth="1.4" opacity="0.55" />
+      <circle cx="16" cy="16" r="9.5" fill="none" stroke="#ffffff" strokeWidth="1.3" opacity="0.5" />
       <path
-        d="M16 9 L22 23 H19.2 L17.6 19 H14.4 L12.8 23 H10 Z M16 13.6 L14.9 16.6 H17.1 Z"
-        fill="#ffffff"
+        d="M7.5 16.5c2 0 2-2.4 4-2.4s2 2.4 4 2.4 2-2.4 4-2.4 2 2.4 4 2.4 2-2.4 4-2.4"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
       />
+      <circle cx="16" cy="10.4" r="1.6" fill="#ffffff" />
     </svg>
   );
 }
