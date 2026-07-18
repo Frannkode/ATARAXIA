@@ -31,7 +31,12 @@ loadDotEnv(".env");
 // directorio, aunque sea otro puerto, por el lockfile de .next/dev) —
 // reusarlo en vez de pelear con el lock.
 const PORT = 3000;
-const BASE_URL = `http://localhost:${PORT}`;
+
+// E2E_BASE_URL: corre la misma suite contra un deploy real (ej. el
+// subdominio de Vercel) en vez de local — en ese caso no hay que levantar
+// ningún dev server, el sitio ya está corriendo ahí.
+const remoteBaseUrl = process.env.E2E_BASE_URL;
+const BASE_URL = remoteBaseUrl ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -51,10 +56,14 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: `npx next dev --port ${PORT}`,
-    url: BASE_URL,
-    reuseExistingServer: true,
-    timeout: 60_000,
-  },
+  ...(remoteBaseUrl
+    ? {}
+    : {
+        webServer: {
+          command: `npx next dev --port ${PORT}`,
+          url: BASE_URL,
+          reuseExistingServer: true,
+          timeout: 60_000,
+        },
+      }),
 });
