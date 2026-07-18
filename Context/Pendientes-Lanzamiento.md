@@ -2,6 +2,8 @@
 
 Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo único que falta — todo lo demás del backlog (6 sprints) ya está construido, testeado y commiteado.
 
+✅ **Ya publicado y funcionando:** https://tienda-ecommerce-ataraxia.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
+
 ---
 
 ## 🔴 Bloqueantes — sin esto no se puede publicar en tu dominio real
@@ -43,6 +45,10 @@ Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo
 - ¿Querés que cada pedido genere un comprobante simple (PDF o resumen) para el cliente? (no es factura electrónica, eso sigue fuera de alcance): ___
 - ¿Ya tenés cuenta de Google Analytics / Search Console, o hace falta crearlas?: ___
 - ¿Te interesa notificar pedidos por WhatsApp además de email? (hoy no está incluido, si te interesa lo cotizamos aparte): ___
+
+### 6. Cron externo para expirar pedidos abandonados
+El sistema tiene una ruta (`/api/cron/expire-orders`) que libera el stock reservado de pedidos que quedaron sin pagar — es el respaldo por si un webhook de MercadoPago se pierde. Para que se ejecute sola periódicamente hace falta un servicio externo gratuito tipo [cron-job.org](https://cron-job.org) que le pegue cada 15-30 minutos con el `CRON_SECRET` que ya está cargado. No es bloqueante (hoy simplemente no se libera automático el stock de un pedido abandonado, se puede hacer a mano desde `/admin/stock` mientras tanto), pero es fácil de dejar andando:
+- ¿Querés que te pase el paso a paso para configurarlo vos (2 minutos, requiere crear una cuenta gratis), o preferís que lo dejemos para más adelante?: ___
 
 ---
 
