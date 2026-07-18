@@ -47,8 +47,11 @@ Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo
 - ¿Te interesa notificar pedidos por WhatsApp además de email? (hoy no está incluido, si te interesa lo cotizamos aparte): ___
 
 ### 6. Cron externo para expirar pedidos abandonados
-El sistema tiene una ruta (`/api/cron/expire-orders`) que libera el stock reservado de pedidos que quedaron sin pagar — es el respaldo por si un webhook de MercadoPago se pierde. Para que se ejecute sola periódicamente hace falta un servicio externo gratuito tipo [cron-job.org](https://cron-job.org) que le pegue cada 15-30 minutos con el `CRON_SECRET` que ya está cargado. No es bloqueante (hoy simplemente no se libera automático el stock de un pedido abandonado, se puede hacer a mano desde `/admin/stock` mientras tanto), pero es fácil de dejar andando:
-- ¿Querés que te pase el paso a paso para configurarlo vos (2 minutos, requiere crear una cuenta gratis), o preferís que lo dejemos para más adelante?: ___
+✅ **Resuelto (2026-07-18)** — con la API key que dejaste (ya la saqué de este archivo, quedó solo en `.env`, nunca en un documento del repo) creé el cronjob directo por la API de cron-job.org:
+- Job `ATARAXIA - expirar pedidos abandonados` (id `8118220`), activo.
+- Le pega a `/api/cron/expire-orders` cada 15 minutos (min 0/15/30/45, todas las horas), zona horaria Argentina.
+- Ya probé el endpoint a mano contra producción antes de esto y reconcilió correctamente pedidos viejos de prueba — el cronjob solo automatiza esa misma llamada.
+- Podés ver el historial de ejecuciones entrando a tu cuenta de cron-job.org.
 
 ---
 
