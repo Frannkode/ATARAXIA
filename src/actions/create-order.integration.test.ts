@@ -8,7 +8,7 @@
  * Se salta automáticamente si no hay TEST_DATABASE_URL configurada. Para
  * correrlo:
  *
- *   TEST_DATABASE_URL="postgresql://postgres:devpassword@localhost:5433/ataraxia" npm run test
+ *   TEST_DATABASE_URL="postgresql://postgres:devpassword@localhost:5433/kode" npm run test
  */
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";

@@ -2,17 +2,16 @@
 
 Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo único que falta — todo lo demás del backlog (6 sprints) ya está construido, testeado y commiteado.
 
-✅ **Ya publicado y funcionando:** https://tienda-ecommerce-ataraxia.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
+✅ **Ya publicado y funcionando:** https://kode.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
 
 ---
 
 ## 🔴 Bloqueantes — sin esto no se puede publicar en tu dominio real
 
 ### 1. Logo final
-- Archivo SVG (vectorial): ⚠️ **No puedo usar el archivo que dejaste** (`Nike,_Inc.-Logo.wine.svg`) — es el logo de Nike, una marca registrada de otra empresa, bajada de un sitio de recopilación de logos. Usarlo en tu tienda sería un problema legal real (uso no autorizado de marca ajena), no solo un detalle estético. Sigue pendiente: necesito el logo real de tu marca.
-- Variantes PNG (para favicon, redes, etc.): ___
+✅ **Resuelto (2026-07-18)** — rebrand completo del proyecto de "ATARAXIA" a **KODE**, usando el wordmark que pasaste (`public/kode-wordmark.png`) en el header del sitio, título, emails y política de cambios. El favicon es un monograma "K" simple (`src/app/icon.svg`) hasta que tengas una versión vectorial (SVG) del wordmark — si la conseguís, lo reemplazo directo.
 
-*Mientras tanto el sitio sigue con el favicon placeholder (fondo lila, letra "A").*
+*Nota: antes de este wordmark rechacé varios archivos que reproducían el swoosh de Nike (con o sin texto superpuesto) — eso no cambió, esos nunca se usaron.*
 
 ### 2. MercadoPago — credenciales de producción
 - Access Token de producción (`APP_USR-...`, el real, no el de test): ___
@@ -48,7 +47,7 @@ Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo
 
 ### 6. Cron externo para expirar pedidos abandonados
 ✅ **Resuelto (2026-07-18)** — con la API key que dejaste (ya la saqué de este archivo, quedó solo en `.env`, nunca en un documento del repo) creé el cronjob directo por la API de cron-job.org:
-- Job `ATARAXIA - expirar pedidos abandonados` (id `8118220`), activo.
+- Job `KODE - expirar pedidos abandonados` (id `8118220`), activo.
 - Le pega a `/api/cron/expire-orders` cada 15 minutos (min 0/15/30/45, todas las horas), zona horaria Argentina.
 - Ya probé el endpoint a mano contra producción antes de esto y reconcilió correctamente pedidos viejos de prueba — el cronjob solo automatiza esa misma llamada.
 - Podés ver el historial de ejecuciones entrando a tu cuenta de cron-job.org.

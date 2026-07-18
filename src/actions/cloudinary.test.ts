@@ -10,7 +10,7 @@ const { apiSignRequest } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/cloudinary", () => ({
   cloudinary: { utils: { api_sign_request: apiSignRequest } },
-  CLOUDINARY_UPLOAD_FOLDER: "ataraxia/products",
+  CLOUDINARY_UPLOAD_FOLDER: "kode/products",
 }));
 
 const { createUploadSignature } = await import("./cloudinary");
@@ -33,7 +33,7 @@ describe("createUploadSignature", () => {
     const result = await createUploadSignature();
 
     expect(apiSignRequest).toHaveBeenCalledWith(
-      expect.objectContaining({ folder: "ataraxia/products" }),
+      expect.objectContaining({ folder: "kode/products" }),
       "test-api-secret",
     );
     expect(result).toEqual(
@@ -41,7 +41,7 @@ describe("createUploadSignature", () => {
         signature: "fake-signature",
         apiKey: "test-api-key",
         cloudName: "test-cloud",
-        folder: "ataraxia/products",
+        folder: "kode/products",
       }),
     );
     expect(JSON.stringify(result)).not.toContain("test-api-secret");

@@ -13,7 +13,7 @@ export default function PoliticaDeCambiosPage() {
 
       <div className="flex flex-col gap-4 text-sm text-foreground">
         <p>
-          En ATARAXIA queremos que estés conforme con tu compra. Si no es así, contás con las
+          En KODE queremos que estés conforme con tu compra. Si no es así, contás con las
           siguientes opciones:
         </p>
 

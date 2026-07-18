@@ -59,7 +59,7 @@ export function PaymentApprovedEmail({
 
           <Section style={{ marginTop: "24px" }}>
             <Text style={{ color: EMAIL_BRAND_COLORS.mutedText, fontSize: "12px" }}>
-              ATARAXIA — gracias por tu compra.
+              KODE — gracias por tu compra.
             </Text>
           </Section>
         </Container>

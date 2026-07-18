@@ -1,8 +1,8 @@
-# ATARAXIA — E-commerce de indumentaria
+# KODE — E-commerce de indumentaria
 
 Proyecto full-stack en Next.js (App Router). Ver `Context/Backlog-Ecommerce.md` para el backlog completo y `Context/Pendientes-Lanzamiento.md` para lo que falta confirmar antes del lanzamiento final (dominio propio, credenciales de producción de MercadoPago, logo real).
 
-**Producción (subdominio temporal, hasta tener dominio propio):** https://tienda-ecommerce-ataraxia.vercel.app
+**Producción (subdominio temporal, hasta tener dominio propio):** https://kode.vercel.app
 
 ## Stack
 
@@ -54,11 +54,11 @@ Proyecto full-stack en Next.js (App Router). Ver `Context/Backlog-Ecommerce.md` 
 
 - `npm test` — unit tests (Vitest). Los archivos `*.integration.test.ts` necesitan `TEST_DATABASE_URL` apuntando a un Postgres real; sin esa variable se saltean solos.
 - Para correr los integration tests localmente: levantar un Postgres 16 en Docker (puerto 5433 para no chocar con otros proyectos), aplicar todas las migraciones de `drizzle/*.sql` en orden, y correr `npm test` con `TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/<db>"`.
-- `npm run test:e2e` — suite E2E con Playwright (`e2e/`), contra un dev server local en `localhost:3000` por default. Para correrla contra un deploy real en vez de local: `E2E_BASE_URL="https://tienda-ecommerce-ataraxia.vercel.app" npm run test:e2e`.
+- `npm run test:e2e` — suite E2E con Playwright (`e2e/`), contra un dev server local en `localhost:3000` por default. Para correrla contra un deploy real en vez de local: `E2E_BASE_URL="https://kode.vercel.app" npm run test:e2e`.
 
 ## Deploy (Vercel)
 
-El proyecto está linkeado a Vercel (`frannkodes-projects/tienda-ecommerce-ataraxia`), conectado al repo de GitHub. Las variables de entorno de producción se cargan con `vercel env add <NOMBRE> production` (ver `.env.example` para la lista completa). Deploy manual: `npx vercel deploy --prod`.
+El proyecto está linkeado a Vercel (`frannkodes-projects/kode`), conectado al repo de GitHub. Las variables de entorno de producción se cargan con `vercel env add <NOMBRE> production` (ver `.env.example` para la lista completa). Deploy manual: `npx vercel deploy --prod`.
 
 Pendiente para el dominio propio del cliente: ver `Context/Pendientes-Lanzamiento.md`.
 
@@ -81,7 +81,7 @@ e2e/              # suite E2E (Playwright)
 
 ## Paleta de marca y logo
 
-Los tokens de color viven en `src/app/globals.css` (`@theme`) — ya confirmados y validados por contraste WCAG AA (Historia 6.1). El logo sigue siendo un placeholder (`src/app/icon.svg`, `src/components/logo.tsx`) hasta que el cliente provea el logo real — ver `Context/Pendientes-Lanzamiento.md`.
+Los tokens de color viven en `src/app/globals.css` (`@theme`) — validados por contraste WCAG AA (Historia 6.1). El logo (wordmark "KODE", `public/kode-wordmark.png` + `src/components/logo.tsx`) y el nombre de marca se actualizaron el 2026-07-18 (rebrand de "ATARAXIA" a "KODE"). El favicon (`src/app/icon.svg`) es un monograma "K" simple hasta tener una versión vectorial del wordmark.
 
 ## Monitoreo de errores (Sentry)
 

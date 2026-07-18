@@ -43,7 +43,7 @@ export function PaymentRejectedEmail({ orderId, customerName, orderUrl }: Paymen
 
           <Section style={{ marginTop: "24px" }}>
             <Text style={{ color: EMAIL_BRAND_COLORS.mutedText, fontSize: "12px" }}>
-              ATARAXIA — cualquier duda, escribinos.
+              KODE — cualquier duda, escribinos.
             </Text>
           </Section>
         </Container>

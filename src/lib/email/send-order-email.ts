@@ -9,7 +9,7 @@ import { getSiteUrl } from "@/lib/site-url";
 // verificar dominio propio — el cliente todavía no proveyó uno (ver
 // Context/Preguntas-Cliente.md, "Antes del Sprint 3"). Reemplazar cuando
 // haya un dominio verificado.
-const FROM_ADDRESS = "ATARAXIA <onboarding@resend.dev>";
+const FROM_ADDRESS = "KODE <onboarding@resend.dev>";
 
 /**
  * Dispara el email transaccional correspondiente al estado final de un

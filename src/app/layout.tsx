@@ -6,10 +6,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "ATARAXIA",
-    template: "%s · ATARAXIA",
+    default: "KODE",
+    template: "%s · KODE",
   },
-  description: "ATARAXIA — indumentaria",
+  description: "KODE — indumentaria",
 };
 
 export default function RootLayout({
@@ -22,9 +22,8 @@ export default function RootLayout({
       <body>
         <header className="border-b border-border">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
-              <Logo className="h-7 w-7" />
-              ATARAXIA
+            <Link href="/" className="flex items-center">
+              <Logo className="h-6 w-auto" />
             </Link>
             <CartLink />
           </div>
