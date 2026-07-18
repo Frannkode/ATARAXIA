@@ -3,13 +3,7 @@ import { notFound } from "next/navigation";
 import { PayNowButton } from "@/components/pay-now-button";
 import { getOrderById } from "@/db/queries/orders";
 import { formatPrice } from "@/lib/format";
-
-const STATUS_LABEL: Record<string, string> = {
-  pendiente_pago: "Pendiente de pago",
-  pagado: "Pagado",
-  rechazado: "Rechazado",
-  en_proceso: "En proceso",
-};
+import { ORDER_STATUS_LABEL } from "@/lib/order-status-labels";
 
 export default async function OrderConfirmationPage({
   params,
@@ -31,7 +25,7 @@ export default async function OrderConfirmationPage({
       </p>
 
       <p className="mb-6 inline-block rounded-full bg-muted px-3 py-1 text-sm font-medium text-foreground">
-        Estado: {STATUS_LABEL[order.status] ?? order.status}
+        Estado: {ORDER_STATUS_LABEL[order.status] ?? order.status}
       </p>
 
       {order.status === "pendiente_pago" && (

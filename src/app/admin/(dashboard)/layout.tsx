@@ -21,6 +21,12 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <Link href="/admin/categories" className="text-sm font-medium text-foreground">
               Categorías
             </Link>
+            <Link href="/admin/orders" className="text-sm font-medium text-foreground">
+              Pedidos
+            </Link>
+            <Link href="/admin/stock" className="text-sm font-medium text-foreground">
+              Stock
+            </Link>
           </div>
           <LogoutButton />
         </nav>

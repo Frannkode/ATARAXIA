@@ -87,6 +87,15 @@ export const orderStatusEnum = pgEnum("order_status", [
   "en_proceso",
 ]);
 
+// Concepto independiente del estado de pago (Sprint 5, Historia 5.2): una
+// orden tiene un solo estado de envio a la vez, igual que el de pago, asi
+// que va como columna en la misma tabla (no una tabla de historial aparte).
+export const shippingStatusEnum = pgEnum("shipping_status", [
+  "preparando",
+  "despachado",
+  "entregado",
+]);
+
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
   // Generado en el cliente al montar el formulario de checkout; un segundo
@@ -94,6 +103,11 @@ export const orders = pgTable("orders", {
   // duplicada (ver Historia 2.4 y la revision de arquitectura del Sprint 2).
   idempotencyKey: text("idempotency_key").notNull().unique(),
   status: orderStatusEnum("status").notNull().default("pendiente_pago"),
+  // Default "preparando" aunque la orden todavia no este pagada — no es
+  // semanticamente valido hasta que status = 'pagado' (el panel admin oculta
+  // el estado de envio para ordenes no pagadas, ver Historia 5.1), pero
+  // mantenerlo simple como columna con default evita nullability innecesaria.
+  shippingStatus: shippingStatusEnum("shipping_status").notNull().default("preparando"),
   // Preferencia de pago de MercadoPago (Sprint 3, Historia 3.1). Nullable: no
   // existe hasta el primer POST a /checkout. Un reintento de pago sobre la
   // misma orden reutiliza esta preferencia en vez de crear una nueva en la
@@ -158,6 +172,32 @@ export const processedMercadopagoPayments = pgTable("processed_mercadopago_payme
   status: text("status").notNull(),
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Auditoria de overrides manuales de estado de pago (Sprint 5, Historia 5.3).
+// Solo cubre cambios manuales — las transiciones automaticas (webhook/cron)
+// ya tienen su propio rastro en processed_mercadopago_payments + logs.
+// changedByUserId se guarda aunque hoy solo haya un admin (Sprint 4): sale
+// gratis de requireAdminSession() y queda listo si se suma un segundo admin.
+export const orderStatusAuditLog = pgTable("order_status_audit_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  changedByUserId: text("changed_by_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "restrict" }),
+  fromStatus: orderStatusEnum("from_status").notNull(),
+  toStatus: orderStatusEnum("to_status").notNull(),
+  reason: text("reason"),
+  changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const orderStatusAuditLogRelations = relations(orderStatusAuditLog, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderStatusAuditLog.orderId],
+    references: [orders.id],
+  }),
+}));
 
 // Rate limit de createOrder (Historia 2.4, hallazgo de /review): checkout de
 // invitado sin gate de pago hasta Sprint 3 + descuento de stock inmediato es

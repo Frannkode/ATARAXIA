@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -143,4 +143,41 @@ export async function setProductActive(
   }
 
   return { success: true, productId };
+}
+
+// Historia 5.4: ajuste por DELTA ("sumar/restar N"), no por valor absoluto.
+// stock = stock + delta es seguro bajo concurrencia sin importar que un
+// checkout de cliente decremente stock al mismo tiempo (mismo patrón que la
+// liberación de stock de Sprint 3) — la carrera real acá no es "dos admins
+// editando a la vez", es "admin corrigiendo mientras un cliente compra".
+export async function adjustProductStock(
+  productId: string,
+  delta: number,
+): Promise<ProductActionResult> {
+  await requireAdminSession();
+
+  if (!Number.isInteger(delta) || delta === 0) {
+    return { success: false, error: "El ajuste tiene que ser un número entero distinto de cero." };
+  }
+
+  try {
+    const [updated] = await db
+      .update(products)
+      .set({ stock: sql`${products.stock} + ${delta}`, updatedAt: new Date() })
+      .where(eq(products.id, productId))
+      .returning();
+
+    if (!updated) {
+      return { success: false, error: "Producto no encontrado." };
+    }
+
+    revalidatePath("/admin/stock");
+    return { success: true, productId };
+  } catch (error) {
+    if (getPostgresErrorCode(error) === "23514") {
+      return { success: false, error: "Ese ajuste dejaría el stock en negativo." };
+    }
+    console.error("adjustProductStock: fallo inesperado", error);
+    return { success: false, error: "No pudimos ajustar el stock. Probá de nuevo." };
+  }
 }

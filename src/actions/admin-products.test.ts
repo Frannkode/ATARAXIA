@@ -31,7 +31,8 @@ vi.mock("@/db", () => ({
   },
 }));
 
-const { createProduct, setProductActive, updateProduct } = await import("./admin-products");
+const { adjustProductStock, createProduct, setProductActive, updateProduct } =
+  await import("./admin-products");
 
 const validValues = {
   name: "Remera Básica",
@@ -119,5 +120,47 @@ describe("setProductActive", () => {
     updateReturning.mockResolvedValue([{ id: "prod-1", active: true }]);
     const result = await setProductActive("prod-1", true);
     expect(result.success).toBe(true);
+  });
+});
+
+describe("adjustProductStock", () => {
+  beforeEach(() => {
+    requireAdminSession.mockClear();
+    updateReturning.mockReset();
+  });
+
+  it("rechaza un delta de 0", async () => {
+    const result = await adjustProductStock("prod-1", 0);
+    expect(result.success).toBe(false);
+    expect(updateReturning).not.toHaveBeenCalled();
+  });
+
+  it("rechaza un delta no entero", async () => {
+    const result = await adjustProductStock("prod-1", 1.5);
+    expect(result.success).toBe(false);
+    expect(updateReturning).not.toHaveBeenCalled();
+  });
+
+  it("caso feliz: ajusta el stock (delta positivo)", async () => {
+    updateReturning.mockResolvedValue([{ id: "prod-1", stock: 20 }]);
+    const result = await adjustProductStock("prod-1", 10);
+    expect(result).toEqual({ success: true, productId: "prod-1" });
+    expect(requireAdminSession).toHaveBeenCalledOnce();
+  });
+
+  it("delta negativo que dejaría el stock en negativo (23514): error amigable", async () => {
+    const error = new Error("check violation");
+    (error as { cause?: unknown }).cause = { code: "23514" };
+    updateReturning.mockRejectedValue(error);
+
+    const result = await adjustProductStock("prod-1", -100);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/negativo/i);
+  });
+
+  it("producto no encontrado: error explícito", async () => {
+    updateReturning.mockResolvedValue([]);
+    const result = await adjustProductStock("does-not-exist", 5);
+    expect(result).toEqual({ success: false, error: "Producto no encontrado." });
   });
 });

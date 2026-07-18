@@ -40,12 +40,16 @@ describe.skipIf(!TEST_DB_URL)("applyPaymentResult (integración, Postgres real)"
   let productAId: string;
   let productBId: string;
 
-  async function makeOrder(status: "pendiente_pago" | "pagado" | "rechazado" | "en_proceso") {
+  async function makeOrder(
+    status: "pendiente_pago" | "pagado" | "rechazado" | "en_proceso",
+    shippingStatus: "preparando" | "despachado" | "entregado" = "preparando",
+  ) {
     const [order] = await db
       .insert(schema.orders)
       .values({
         idempotencyKey: crypto.randomUUID(),
         status,
+        shippingStatus,
         customerName: "Test",
         customerEmail: "test@example.com",
         customerPhone: "123",
@@ -214,6 +218,70 @@ describe.skipIf(!TEST_DB_URL)("applyPaymentResult (integración, Postgres real)"
     expect(applied).toHaveLength(1);
     expect(await getProductStock(productAId)).toBe(12); // 10 + 2, NO 10 + 4
     expect(await getProductStock(productBId)).toBe(6); // 5 + 1, NO 5 + 2
+  });
+
+  it("chargeback sobre un pedido ya despachado: transiciona a rechazado pero NO libera stock fantasma", async () => {
+    // Historia 5.3.1: la mercadería ya salió, liberar stock acá inflaría el
+    // inventario con unidades que físicamente no están.
+    const { applyPaymentResult } = await import("./payment-result");
+    const orderId = await makeOrder("pagado", "despachado");
+
+    const outcome = await applyPaymentResult(orderId, "charged_back");
+
+    expect(outcome).toEqual({ applied: true, newStatus: "rechazado" });
+    expect(await getOrderStatus(orderId)).toBe("rechazado");
+    expect(await getProductStock(productAId)).toBe(10); // sin cambios, NO 12
+    expect(await getProductStock(productBId)).toBe(5); // sin cambios, NO 6
+  });
+
+  it("chargeback sobre un pedido ya entregado: mismo comportamiento, no libera stock", async () => {
+    const { applyPaymentResult } = await import("./payment-result");
+    const orderId = await makeOrder("pagado", "entregado");
+
+    const outcome = await applyPaymentResult(orderId, "refunded");
+
+    expect(outcome).toEqual({ applied: true, newStatus: "rechazado" });
+    expect(await getProductStock(productAId)).toBe(10);
+  });
+
+  it("chargeback sobre un pedido pagado que TODAVÍA no se despachó: sí libera stock", async () => {
+    // Contraste: el guard nuevo (pagado abierto a un chargeback) no debería
+    // desactivar la liberación de stock del caso normal (sin envío todavía).
+    const { applyPaymentResult } = await import("./payment-result");
+    const orderId = await makeOrder("pagado", "preparando");
+
+    const outcome = await applyPaymentResult(orderId, "charged_back");
+
+    expect(outcome).toEqual({ applied: true, newStatus: "rechazado" });
+    expect(await getProductStock(productAId)).toBe(12);
+    expect(await getProductStock(productBId)).toBe(6);
+  });
+
+  it("'rejected' tardío (no un chargeback) sobre una orden ya pagada: sigue siendo no-op", async () => {
+    // Distinción fina: rejected/cancelled son la resolución ORIGINAL de un
+    // intento de pago — una señal tardía/duplicada de esto no debe revertir
+    // un pago ya aprobado (a diferencia de un chargeback real, que sí debe).
+    const { applyPaymentResult } = await import("./payment-result");
+    const orderId = await makeOrder("pagado", "preparando");
+
+    const outcome = await applyPaymentResult(orderId, "cancelled");
+
+    expect(outcome).toEqual({ applied: false, newStatus: "rechazado" });
+    expect(await getOrderStatus(orderId)).toBe("pagado");
+    expect(await getProductStock(productAId)).toBe(10);
+  });
+
+  it("rejected sobre un pedido que TODAVÍA no se despachó: libera stock normalmente", async () => {
+    // Contraste con los dos tests anteriores: confirma que el guard de
+    // shippingStatus no rompe el caso normal (rechazo antes del envío).
+    const { applyPaymentResult } = await import("./payment-result");
+    const orderId = await makeOrder("pendiente_pago", "preparando");
+
+    const outcome = await applyPaymentResult(orderId, "rejected");
+
+    expect(outcome).toEqual({ applied: true, newStatus: "rechazado" });
+    expect(await getProductStock(productAId)).toBe(12);
+    expect(await getProductStock(productBId)).toBe(6);
   });
 
   it("estado de MercadoPago desconocido: no aplica nada", async () => {

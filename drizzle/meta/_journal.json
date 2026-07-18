@@ -50,6 +50,13 @@
       "when": 1784331405503,
       "tag": "0006_chubby_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784339139170,
+      "tag": "0007_red_shard",
+      "breakpoints": true
     }
   ]
 }
