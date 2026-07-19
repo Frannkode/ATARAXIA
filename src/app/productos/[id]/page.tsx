@@ -45,8 +45,30 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const outOfStock = product.stock <= 0;
   const initialPreview = calculateLineItem(product, 1);
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description ?? undefined,
+    sku: product.sku,
+    image: product.images.map((image) => image.url),
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "ARS",
+      price: product.retailPrice,
+      availability: outOfStock
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
+    },
+  };
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+
       <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
         ← Volver al catálogo
       </Link>
