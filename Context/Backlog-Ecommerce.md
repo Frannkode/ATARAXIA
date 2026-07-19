@@ -599,6 +599,70 @@
 
 ---
 
+> **Nota (2026-07-19):** el backlog original terminaba en el Sprint 6 — los 6 sprints están completos y desplegados. Lo que sigue es un Sprint 7 nuevo, armado a pedido del cliente ("algo que me dé cosas para desarrollar"), tomando 3 ítems de la sección "Fuera de alcance" original que sí suman valor real a una tienda ya funcionando. Todavía no pasó por `/plan-eng-review` ni tiene fecha de inicio — es propuesta, no compromiso.
+
+## Sprint 7 — Reseñas, cupones y comprobante de pedido
+
+**Objetivo:** Sumar herramientas que ayuden a vender más (confianza vía reseñas, cupones para promociones) y a profesionalizar la experiencia post-compra (comprobante descargable), sobre una tienda que ya funciona de punta a punta.
+
+**Definición de Listo (DoR):**
+- Confirmar si los cupones son solo de % , solo de monto fijo, o ambos (se diseña soportando los dos tipos por default, así que no bloquea el arranque)
+- Confirmar si las reseñas necesitan moderación previa del admin antes de publicarse, o se publican directo (se arranca asumiendo que sí hay moderación — más conservador, se puede sacar después si no hace falta)
+
+### Historia 7.1 — Reseñas y calificaciones de productos
+**Historia:** Como comprador, quiero dejar una reseña y calificación de un producto que compré, para ayudar a otros compradores a decidir.
+**Rol:** Backend + Frontend
+**Tareas técnicas:**
+- Tabla nueva `productReviews` (productId, orderId, customerName, rating 1-5, comment, approved boolean default false, createdAt)
+- **Solo se puede reseñar un producto de un pedido propio ya `pagado`** — la Server Action valida que `orderId` corresponda a un pedido pagado que efectivamente incluya ese `productId` (no un formulario abierto a cualquiera); constraint único `(orderId, productId)` para que no se pueda dejar más de una reseña del mismo producto en el mismo pedido.
+- Promedio de rating + cantidad de reseñas visible en la ficha de producto (y opcionalmente en el card del catálogo)
+- Panel admin: listado de reseñas pendientes con aprobar/rechazar (solo las `approved = true` se muestran en la tienda pública)
+**Dependencias:** Depende de: Modelo de Order (Sprint 2), CRUD/listado admin (Sprint 4-5)
+**Casos borde:** Intento de reseñar un producto de un pedido ajeno o no pagado → rechazado; segunda reseña sobre el mismo producto del mismo pedido → rechazada por el constraint único, no un 500
+**Criterio de aceptación:** Un comprador con un pedido pagado puede dejar una reseña de los productos de ese pedido, y solo las aprobadas por el admin aparecen en la ficha pública.
+**Estimación:** 8h / 6 SP
+
+### Historia 7.2 — Cupones de descuento
+**Historia:** Como administrador, quiero crear cupones de descuento, para poder hacer promociones puntuales.
+**Rol:** Backend + Frontend
+**Tareas técnicas:**
+- Tabla nueva `coupons` (code único, discountType `percentage`/`fixed`, discountValue, minPurchaseAmount nullable, maxUses nullable, usedCount default 0, expiresAt nullable, active)
+- Campo de código de cupón en el checkout — valida vigencia, monto mínimo y cupo disponible, y recalcula el subtotal antes de crear la orden
+- **Incrementar `usedCount` tiene que ser atómico con la validación del cupo** (mismo patrón de guard-en-el-UPDATE ya usado en Sprint 3/5 para stock): `UPDATE coupons SET used_count = used_count + 1 WHERE code = ... AND (max_uses IS NULL OR used_count < max_uses)`, para que dos compradores usando el mismo cupón limitado al mismo tiempo no lo sobre-usen
+- CRUD de cupones en el panel admin
+**Dependencias:** Depende de: Checkout (Sprint 2), CRUD admin (Sprint 4)
+**Casos borde:** Cupón vencido, ya alcanzó el máximo de usos, o no llega al monto mínimo → rechazado con mensaje explícito, no rompe el checkout; dos compradores validando el mismo cupón con 1 uso restante al mismo tiempo → solo uno lo consigue
+**Criterio de aceptación:** Un cupón válido descuenta correctamente el subtotal en el checkout, y no puede usarse más veces de las permitidas ni bajo concurrencia.
+**Estimación:** 7h / 6 SP
+
+### Historia 7.3 — Comprobante de pedido en PDF
+**Historia:** Como comprador, quiero poder descargar un comprobante simple de mi pedido, para tener un registro de la compra.
+**Rol:** Backend
+**Tareas técnicas:**
+- Ruta `/api/pedidos/[id]/comprobante` que genera un PDF (productos, cantidades, precios, subtotal, datos del comprador, número de pedido) a partir de los mismos datos que ya muestra `/pedidos/[id]`
+- Botón "Descargar comprobante" en la página de confirmación de pedido, visible solo si el pedido está `pagado`
+- **No es factura electrónica** (sigue fuera de alcance — sin CAE ni validez fiscal ante AFIP), se aclara así en el propio comprobante
+**Dependencias:** Depende de: Página de confirmación de pedido (Sprint 2)
+**Casos borde:** Pedido no pagado → el botón no aparece, y la ruta devuelve 403 si se pide igual por URL directa
+**Criterio de aceptación:** Desde un pedido pagado se puede descargar un PDF con el detalle completo de la compra.
+**Estimación:** 5h / 4 SP
+
+**Definición de Hecho del Sprint:**
+- [ ] Reseñas moderadas visibles en la ficha de producto
+- [ ] Cupones aplicables en checkout, con cupo y vigencia respetados bajo concurrencia
+- [ ] Comprobante de pedido descargable en PDF
+- [ ] Demo al cliente realizada
+
+**Recortables si el sprint se atrasa:**
+- No recortable: nada — las 3 historias son independientes entre sí, se pueden entregar de a una sin romper las otras
+- Recortable: la moderación admin de reseñas (Historia 7.1) podría arrancar publicando directo y sumarse después, si el cliente prefiere no bloquear reseñas en la revisión manual
+
+**Demo al cliente:** Dejar una reseña sobre un producto de un pedido real, aplicar un cupón de descuento en un checkout nuevo, y descargar el comprobante en PDF del pedido resultante.
+
+**Total Sprint 7:** 20h / 16 SP
+
+---
+
 ## A) Requisitos no funcionales
 
 **Seguridad:**
