@@ -9,8 +9,8 @@ export function Logo({ className }: { className?: string }) {
     <Image
       src="/kode-wordmark.svg"
       alt="KODE"
-      width={1774}
-      height={887}
+      width={1324}
+      height={238}
       priority
       unoptimized
       className={className}
