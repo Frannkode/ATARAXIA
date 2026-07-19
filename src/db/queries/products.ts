@@ -127,6 +127,16 @@ export async function getProductById(id: string) {
 // Panel admin (Historia 4.3): a diferencia de getProducts()/getProductById(),
 // NO filtra por active — sin esto un producto "borrado" (soft delete)
 // desaparecería también del panel admin, sin forma de reactivarlo.
+// Solo id + updatedAt, sin paginar: el sitemap necesita el set completo de
+// productos públicos (a diferencia de getProducts, pensado para el catálogo
+// paginado).
+export async function getActiveProductsForSitemap() {
+  return db.query.products.findMany({
+    where: (product, { eq }) => eq(product.active, true),
+    columns: { id: true, updatedAt: true },
+  });
+}
+
 export async function getAllProductsForAdmin() {
   return db.query.products.findMany({
     orderBy: (product, { desc }) => desc(product.createdAt),

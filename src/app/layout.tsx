@@ -2,14 +2,30 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CartLink } from "@/components/cart-link";
 import { Logo } from "@/components/logo";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
+const description = "KODE — indumentaria";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "KODE",
     template: "%s · KODE",
   },
-  description: "KODE — indumentaria",
+  description,
+  openGraph: {
+    siteName: "KODE",
+    title: "KODE",
+    description,
+    type: "website",
+    locale: "es_AR",
+  },
+  twitter: {
+    card: "summary",
+    title: "KODE",
+    description,
+  },
 };
 
 export default function RootLayout({

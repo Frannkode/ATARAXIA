@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product-gallery";
@@ -5,6 +6,33 @@ import { ProductPurchaseBox } from "@/components/product-purchase-box";
 import { getProductById } from "@/db/queries/products";
 import { buildCatalogHref } from "@/lib/catalog-url";
 import { calculateLineItem } from "@/lib/pricing";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductById(id);
+
+  if (!product) return {};
+
+  const image = product.images[0]?.url;
+
+  return {
+    title: product.name,
+    description: product.description ?? undefined,
+    openGraph: {
+      title: product.name,
+      description: product.description ?? undefined,
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      images: image ? [image] : undefined,
+    },
+  };
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
