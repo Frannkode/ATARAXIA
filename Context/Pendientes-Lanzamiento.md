@@ -2,7 +2,9 @@
 
 Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo único que falta — todo lo demás del backlog (6 sprints) ya está construido, testeado y commiteado.
 
-✅ **Ya publicado y funcionando:** https://kode.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
+✅ **Ya publicado y funcionando:** https://tienda-ecommerce-ataraxia.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
+
+*Nota sobre el rebrand a KODE: el proyecto de Vercel ya se llama `kode` internamente, pero `kode.vercel.app` es de otra empresa (le pertenece a un estudio de desarrollo real que ya usa ese nombre) — no se pudo tomar. La URL pública sigue siendo esta de arriba (con "ataraxia" en la URL) hasta que tengas tu dominio propio; es solo la dirección, no afecta la marca del sitio en sí, que ya dice KODE en todos lados.*
 
 ---
 
