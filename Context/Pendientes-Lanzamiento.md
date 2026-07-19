@@ -48,7 +48,9 @@ Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo
 - ¿Te interesa notificar pedidos por WhatsApp además de email? (hoy no está incluido, si te interesa lo cotizamos aparte): ___
 
 ### 7. Catálogo real (esto sí es del Sprint 1 original, quedó pendiente)
-Revisando el catálogo en producción encontré que hoy solo hay **5 productos** cargados (el mínimo pactado desde el Sprint 1 era 10, con mínimo 3 fotos cada uno) — y uno de ellos ("baggyy") es claramente un producto de prueba, no uno real. No lo puedo resolver yo inventando productos falsos, sería el mismo problema que se quiso evitar desde el principio (catálogo de prueba en vez de contenido real). Cuando tengas fotos y datos de al menos 10 productos reales, los cargo (vía `/admin/products` uno por uno, o me pasás una planilla y los cargo por script si son muchos).
+El catálogo real (con fotos y productos de tu marca) sigue sin cargar — eso no lo puedo inventar. Lo que sí hice: agregué 7 productos de prueba más (marcados `[PRUEBA]` en el nombre, con fotos placeholder de `placehold.co`, no de Cloudinary) en 2 categorías nuevas (Camperas, Buzos), para tener más variedad mientras seguimos probando el sitio — nunca se venden de verdad, y los saco todos antes del lanzamiento real. No usé Cloudinary a propósito para esto: esa carpeta es donde van a vivir tus fotos reales, y no quería mezclar ahí contenido de prueba.
+
+Cuando tengas fotos y datos de tus productos reales, te los cargo (vía `/admin/products` uno por uno, o me pasás una planilla y los cargo por script si son muchos) — y en ese momento borro todo lo que dice `[PRUEBA]`.
 
 ### 8. SEO básico
 ✅ Agregado (no estaba en el backlog original, pero es estándar antes de publicar una tienda real): `robots.txt`, `sitemap.xml` (catálogo + categorías + cada producto activo) y metadata de Open Graph/Twitter (para que se vea bien un preview al compartir un link de producto). No hace falta que hagas nada acá.
