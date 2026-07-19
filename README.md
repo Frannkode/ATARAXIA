@@ -81,8 +81,14 @@ e2e/              # suite E2E (Playwright)
 
 ## Paleta de marca y logo
 
-Los tokens de color viven en `src/app/globals.css` (`@theme`) — validados por contraste WCAG AA (Historia 6.1). El logo (wordmark "KODE", `public/kode-wordmark.png` + `src/components/logo.tsx`) y el nombre de marca se actualizaron el 2026-07-18 (rebrand de "ATARAXIA" a "KODE"). El favicon (`src/app/icon.svg`) es un monograma "K" simple hasta tener una versión vectorial del wordmark.
+Los tokens de color viven en `src/app/globals.css` (`@theme`) — validados por contraste WCAG AA (Historia 6.1). El logo (wordmark vectorial "KODE", `public/kode-wordmark.svg` + `src/components/logo.tsx`) y el nombre de marca se actualizaron el 2026-07-18 (rebrand de "ATARAXIA" a "KODE"). El favicon (`src/app/icon.svg`) es un monograma "K" simple — el wordmark es horizontal y no entra bien en un ícono cuadrado chico.
 
 ## Monitoreo de errores (Sentry)
 
 Integrado vía `@sentry/nextjs` (`src/instrumentation.ts`, `src/instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`). Sin `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` configurados, el SDK queda instalado pero inactivo — no rompe nada.
+
+## SEO
+
+- `src/app/robots.ts` y `src/app/sitemap.ts` (convención de archivos de Next.js) — el sitemap incluye catálogo, categorías y cada producto activo.
+- Open Graph/Twitter card por default en `layout.tsx`, y por producto vía `generateMetadata` en `productos/[id]/page.tsx` (título, descripción, foto real del producto).
+- Datos estructurados JSON-LD (`schema.org/Product`, con precio y disponibilidad) en cada ficha de producto, para rich snippets de Google.
