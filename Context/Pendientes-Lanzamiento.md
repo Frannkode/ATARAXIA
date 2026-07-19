@@ -2,16 +2,16 @@
 
 Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo único que falta — todo lo demás del backlog (6 sprints) ya está construido, testeado y commiteado.
 
-✅ **Ya publicado y funcionando:** https://tienda-ecommerce-ataraxia.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
+✅ **Ya publicado y funcionando:** https://kodeind.vercel.app (subdominio temporal de Vercel, con MercadoPago de test — no cobra plata real todavía). Corrí la suite de pruebas automatizadas contra esta URL real y pasó completa: catálogo, carrito, checkout, creación de preferencia de pago, login admin, cambio de estado de pedido y ajuste de stock.
 
-*Nota sobre el rebrand a KODE: el proyecto de Vercel ya se llama `kode` internamente, pero `kode.vercel.app` es de otra empresa (le pertenece a un estudio de desarrollo real que ya usa ese nombre) — no se pudo tomar. La URL pública sigue siendo esta de arriba (con "ataraxia" en la URL) hasta que tengas tu dominio propio; es solo la dirección, no afecta la marca del sitio en sí, que ya dice KODE en todos lados.*
+*Nota sobre el rebrand a KODE: el proyecto de Vercel ya se llama `kode` internamente. `kode.vercel.app` (sin más) es de otra empresa — un estudio de desarrollo real que ya usa ese nombre — así que no se pudo tomar esa exacta. Vercel asignó `kodeind.vercel.app`, que sí es nuestro.*
 
 ---
 
 ## 🔴 Bloqueantes — sin esto no se puede publicar en tu dominio real
 
 ### 1. Logo final
-✅ **Resuelto (2026-07-18)** — rebrand completo del proyecto de "ATARAXIA" a **KODE**, usando el wordmark que pasaste (`public/kode-wordmark.png`) en el header del sitio, título, emails y política de cambios. El favicon es un monograma "K" simple (`src/app/icon.svg`) hasta que tengas una versión vectorial (SVG) del wordmark — si la conseguís, lo reemplazo directo.
+✅ **Resuelto (2026-07-18)** — rebrand completo del proyecto de "ATARAXIA" a **KODE**, usando el wordmark vectorial que pasaste (`public/kode-wordmark.svg`) en el header del sitio, título, emails y política de cambios. El favicon sigue siendo un monograma "K" simple (`src/app/icon.svg`) — el wordmark es horizontal y no entra bien en el ícono cuadrado chico del favicon.
 
 *Nota: antes de este wordmark rechacé varios archivos que reproducían el swoosh de Nike (con o sin texto superpuesto) — eso no cambió, esos nunca se usaron.*
 

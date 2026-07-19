@@ -2,7 +2,7 @@
 
 Proyecto full-stack en Next.js (App Router). Ver `Context/Backlog-Ecommerce.md` para el backlog completo y `Context/Pendientes-Lanzamiento.md` para lo que falta confirmar antes del lanzamiento final (dominio propio, credenciales de producción de MercadoPago, logo real).
 
-**Producción (subdominio temporal, hasta tener dominio propio):** https://tienda-ecommerce-ataraxia.vercel.app
+**Producción (subdominio temporal, hasta tener dominio propio):** https://kodeind.vercel.app
 
 ## Stack
 
@@ -54,7 +54,7 @@ Proyecto full-stack en Next.js (App Router). Ver `Context/Backlog-Ecommerce.md` 
 
 - `npm test` — unit tests (Vitest). Los archivos `*.integration.test.ts` necesitan `TEST_DATABASE_URL` apuntando a un Postgres real; sin esa variable se saltean solos.
 - Para correr los integration tests localmente: levantar un Postgres 16 en Docker (puerto 5433 para no chocar con otros proyectos), aplicar todas las migraciones de `drizzle/*.sql` en orden, y correr `npm test` con `TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/<db>"`.
-- `npm run test:e2e` — suite E2E con Playwright (`e2e/`), contra un dev server local en `localhost:3000` por default. Para correrla contra un deploy real en vez de local: `E2E_BASE_URL="https://tienda-ecommerce-ataraxia.vercel.app" npm run test:e2e`.
+- `npm run test:e2e` — suite E2E con Playwright (`e2e/`), contra un dev server local en `localhost:3000` por default. Para correrla contra un deploy real en vez de local: `E2E_BASE_URL="https://kodeind.vercel.app" npm run test:e2e`.
 
 ## Deploy (Vercel)
 
