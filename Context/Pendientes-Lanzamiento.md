@@ -47,6 +47,12 @@ Completá cada campo abajo (reemplazando el `___`) y avisame cuando esté. Es lo
 - ¿Ya tenés cuenta de Google Analytics / Search Console, o hace falta crearlas?: ___
 - ¿Te interesa notificar pedidos por WhatsApp además de email? (hoy no está incluido, si te interesa lo cotizamos aparte): ___
 
+### 7. Catálogo real (esto sí es del Sprint 1 original, quedó pendiente)
+Revisando el catálogo en producción encontré que hoy solo hay **5 productos** cargados (el mínimo pactado desde el Sprint 1 era 10, con mínimo 3 fotos cada uno) — y uno de ellos ("baggyy") es claramente un producto de prueba, no uno real. No lo puedo resolver yo inventando productos falsos, sería el mismo problema que se quiso evitar desde el principio (catálogo de prueba en vez de contenido real). Cuando tengas fotos y datos de al menos 10 productos reales, los cargo (vía `/admin/products` uno por uno, o me pasás una planilla y los cargo por script si son muchos).
+
+### 8. SEO básico
+✅ Agregado (no estaba en el backlog original, pero es estándar antes de publicar una tienda real): `robots.txt`, `sitemap.xml` (catálogo + categorías + cada producto activo) y metadata de Open Graph/Twitter (para que se vea bien un preview al compartir un link de producto). No hace falta que hagas nada acá.
+
 ### 6. Cron externo para expirar pedidos abandonados
 ✅ **Resuelto (2026-07-18)** — con la API key que dejaste (ya la saqué de este archivo, quedó solo en `.env`, nunca en un documento del repo) creé el cronjob directo por la API de cron-job.org:
 - Job `KODE - expirar pedidos abandonados` (id `8118220`), activo.
