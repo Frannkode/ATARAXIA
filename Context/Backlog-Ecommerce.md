@@ -663,6 +663,87 @@
 
 ---
 
+## Sprint 8 — Importación de catálogo + Recuperación de carritos + Notas operacionales
+
+**Objetivo:** Automatizar la carga de productos reales una vez que existan fotos, habilitar campañas de recuperación de clientes que abandonan el carrito, y proporcionar herramientas de tracking operacional al admin para escalar después del lanzamiento.
+
+**Definición de Listo (DoR):**
+- Confirmar si el CSV de productos incluye URLs de imágenes ya en Cloudinary, o si hay que subirlas en paralelo (impacta el scope de validación)
+- Si se implementan notas internas, confirmar si hay requerimientos de auditoría (quién escribió, cuándo) — por default se asume que sí
+
+### Historia 8.1 — Importación de productos desde CSV
+**Historia:** Como administrador, quiero cargar un lote de productos desde un archivo CSV, para no tener que ingresar cientos de productos uno a uno manualmente.
+**Rol:** Backend + Frontend
+**Tareas técnicas:**
+- Endpoint de carga de CSV (formulario multipart) con validación Zod: schema que espera columnas `name`, `sku` (unique), `description`, `retailPrice`, `wholesalePrice` (nullable), `wholesaleMinQty` (nullable), `stock`, `categorySlug`, `imageUrls` (comma-separated Cloudinary URLs, o NULL si se cargarán después)
+- Server Action (requireAdminSession) que parsea el CSV, valida cada fila contra el schema, y devuelve un **preview** (X filas válidas, Y errores de validación, Z SKUs ya existentes) antes de commitar
+- Si preview es OK, segundo paso: transacción atómica en DB — `db.batch()` con:
+  - `INSERT INTO products` para todas las filas válidas (Drizzle `.values()` batch mode)
+  - `SELECT OR INSERT` por cada `categorySlug` (busca la categoría, o la crea con slug si no existe)
+  - Los productos reciben el `categoryId` del lookup/insert
+- **Restricción única en SKU ya existe en schema.ts** — una fila con SKU duplicado en el CSV o conflicto con DB causa que esa fila se rechace con un error claro ("SKU ya existe: XXXXX"), pero el import sigue con el resto
+- Transacción entera se revierte si hay error en validación de constraints (`stock_non_negative` es default 0, no aplica en insert; `product_images` es FK pero opcional aquí, imageUrls se guardan para luego)
+- Respuesta al cliente: resumen de insertados/errores por fila
+- Página admin dedicada (no está en Sprint 4 porque ese era CRUD de a uno) con formulario drag-and-drop de CSV + preview + botón confirmar
+**Dependencias:** Depende de: Modelo de datos (Sprint 1); Protección de rutas admin (Sprint 4)
+**Casos borde:** CSV con SKU duplicado dentro del mismo archivo → segunda ocurrencia rechazada; CSV con columna faltante → error claro listando qué falta; SKU ya existe en DB de importación anterior → esa fila rechazada, resto sigue; stock negativo en CSV → rechazado por validación schema (integer positivo), no llega a la DB
+**Criterio de aceptación:** Un CSV con 100 productos se carga en menos de 10 segundos en un preview, y el segundo paso confirma la inserción atómica — cualquier error en una fila no afecta al resto.
+**Estimación:** 8h / 7 SP
+
+### Historia 8.2 — Recuperación de carritos abandonados
+**Historia:** Como comprador, quiero recibir un email si abandono mi carrito, para poder volver y completar mi compra.
+**Rol:** Backend + Frontend
+**Tareas técnicas:**
+- Tabla nueva `savedCarts` (id, email, cartItems JSON, savedAt, emailSentAt nullable, recoveryToken unique nullable, clickedAt nullable)
+- **Client-side modal**: cuando el carrito es no-vacío Y el usuario intenta navegar lejos de la página (beforeunload) O después de 10 minutos de inactividad en la tienda, mostrar un modal "¿Guardar tu carrito?" con campo email de entrada (opcional, puede usar la app como guest sin guardar)
+- Si el usuario proporciona email y confirma: Guest Action `saveCart` POST a `/api/carts/save` (sin autenticación — es para guests) — guarda el estado actual del carrito, email, genera un UUID en `recoveryToken`, setea `savedAt = now()`. Respuesta: confirmación al usuario.
+- **Cron de recuperación** (ruta protegida con `CRON_SECRET` bearer token, como en Sprint 3 Historia 3.3): `GET /api/cron/recover-abandoned-carts` se ejecuta cada 24 horas — busca filas en `savedCarts` donde `emailSentAt IS NULL AND savedAt < now() - interval 24 hours`, envía email de recuperación vía Resend (template nuevo, reutiliza componentes de React Email), setea `emailSentAt = now()`. El email incluye un link `https://tienda.com/recover-cart/[recoveryToken]` con la descripción de qué había en el carrito.
+- **Endpoint de recuperación**: `GET /recover-cart/[recoveryToken]` (público, no requiere auth) — valida el token contra `savedCarts`, si válido devuelve `cartItems` JSON. El cliente (componente de carrito) lo parsea y restaura a Zustand localStorage. Setea `clickedAt = now()` en la fila para tracking.
+- Template de email: "Completaste tu compra en [tienda], aquí está tu carrito de XXXX pesos", con CTA "Volver a mi carrito" al link de recuperación
+- **No reenviar múltiples veces**: el cron solo envía si `emailSentAt IS NULL` — una vez enviado, no se reenvía aunque el token nunca se use
+**Dependencias:** Depende de: Carrito (Sprint 2); Email transaccional (Sprint 3); Admin de rutas de cron (Sprint 3, patrón de CRON_SECRET)
+**Casos borde:** Usuario guarda carrito, luego completa el checkout normalmente → no debería recibir email. Solución: en `createOrder` (Sprint 2), buscar y actualizar cualquier `savedCart` para ese email a `emailSentAt = now()` (marcar como "no hace falta enviar, ya compró"). Usuario recibe el email pero el carrito cambió (stock se agotó) entre que se guardó y hace clic en el link → mostrar carrito con avisos de items no disponibles, permitir ajustar cantidad o remover
+**Criterio de aceptación:** Un carrito abandonado por 24+ horas recibe un email de recuperación con un link que restaura exactamente ese carrito; si el usuario ya completó una compra desde esa sesión, no recibe el email.
+**Estimación:** 8h / 7 SP
+
+### Historia 8.3 — Notas internas en órdenes
+**Historia:** Como administrador, quiero dejar notas privadas en un pedido, para documentar problemas de envío, comunicaciones con el cliente, o ajustes manuales sin que el cliente las vea.
+**Rol:** Frontend + Backend
+**Tareas técnicas:**
+- Tabla nueva `orderNotes` (id, orderId FK, userId FK, noteText text, createdAt timestamp with TZ)
+- Server Action (requireAdminSession) de crear nota: recibe orderId + texto, inserta con `userId` del usuario actual (`requireAdminSession` lo devuelve)
+- Display en detalle de pedido del panel admin (pagina `/admin/pedidos/[id]`): sección "Notas internas" con lista de notas (más recientes arriba), cada una con usuario, fecha/hora exacta y texto
+- Opcionalmente: soft-delete de notas (lógico, no físico, por auditoría — agregar columna `deletedAt` nullable) — el admin que crea la nota o un admin posterior puede marcarla como "borrada" sin que se pierda el registro
+- Textarea de entrada al fondo de la sección para agregar nota nueva
+**Dependencias:** Depende de: Página de detalle de pedidos (Sprint 5); Protección de rutas admin (Sprint 4)
+**Casos borde:** Intento de crear nota para un pedido inexistente → rechazado; intento de ver notas sin sesión admin → 403; nota muy larga (>5000 caracteres) → validación y truncación con mensaje claro
+**Criterio de aceptación:** Un admin puede escribir una nota en un pedido y verla inmediatamente junto a todas las notas previas, ordenadas por fecha.
+**Estimación:** 5h / 4 SP
+
+### Testing Sprint 8
+**Tarea:** Suite de tests de integración: (1) CSV import con validación de schema, manejo de SKU duplicado, y atomicidad de transacción; (2) carrito guardado persiste y se recupera con el token correcto, el email solo se envía una vez, y si se completa la compra no se envía después; (3) notas internas se crean y se muestran ordenadas por fecha, con requireAdminSession validado.
+**Rol:** Backend / Frontend
+**Criterio de aceptación:** Suite verde cubriendo bulk insert con errores parciales, la lógica de cron de recuperación, y la auditoría de notas.
+**Estimación:** 5h / 4 SP
+
+**Definición de Hecho del Sprint:**
+- [ ] CSV de productos importable desde el panel admin, con preview de validación y preview de errores por fila
+- [ ] Carrito abandonado por 24+ horas genera email de recuperación con link funcional
+- [ ] Notas privadas agregables a cualquier pedido, visibles solo para admin
+- [ ] Suite de tests en verde cubriendo bulk import y recuperación
+- [ ] Demo al cliente realizada
+
+**Recortables si el sprint se atrasa:**
+- No recortable: Importación de CSV (es el bloqueante real del lanzamiento con catálogo real)
+- Recortable a Sprint 9: Recuperación de carritos (valor alto pero puede lanzarse sin ella si el import se atrasa y hay riesgo)
+- Recortable a Sprint 9: Notas internas (conveniencia operacional, no bloquea nada)
+
+**Demo al cliente:** Cargar un CSV de 10 productos de ejemplo en el panel, ver el preview y confirmar el import. Luego simular abandono de carrito (agregar items, cerrar sesión/navegador, esperar 24h en base de datos de staging), recibir el email de recuperación y hacer clic en el link para restaurar el carrito. Finalmente, agregar una nota interna en un pedido existente y verla reflejada inmediatamente.
+
+**Total Sprint 8:** 21h / 18 SP
+
+---
+
 ## A) Requisitos no funcionales
 
 **Seguridad:**
